@@ -17,6 +17,9 @@ To run the code, you can use the following command:
 python main.py --dataset {dataset_name} --model {model_name} --explainer {explainer_name} --random_seed {seed}
 ```
 
+You can do some customization by changing `./dataset_configs/{dataset_name}.json`, `./model_configs/{model_name}_{dataset_name}.json` 
+and `./explainer_configs/{explainer_name}.json`.
+
 ## Explainer
 
 CGE

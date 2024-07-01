@@ -3,6 +3,9 @@ import torch
 import numpy as np
 import random
 
+from models import load_model
+from explainers import load_explainer
+
 
 def getargs():
     parser = argparse.ArgumentParser(description='Explainable AI')
