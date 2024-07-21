@@ -12,6 +12,9 @@ class ACM(NodeClassificationDataset):
         if config.get('check_data_size', False):
             self.check_data_size()
 
+        self.num_classes = len(set(self.labels[0][:, 1]))
+        self.num_features = self.node_features.shape[1]
+
     def load_data(self):
         with open(self.node_features_path, 'rb') as f:
             self.node_features = pickle.load(f)

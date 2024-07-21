@@ -3,12 +3,11 @@ import json
 __all__ = [
     "load_dataset",
     "ACM",
-    "DBLP",
-    "IMDB",
-    "BaseDataset",
+    "NodeClassificationDataset",
 ]
 
 from .acm import ACM
+from .dataset import NodeClassificationDataset
 
 
 def load_dataset(dataset_path):
@@ -22,4 +21,4 @@ def load_dataset(dataset_path):
     except:
         print(
             f"Warning: Dataset {dataset_name} not found specific loader. This may cause errors.")
-        return BaseDataset(dataset_path, config)
+        return NodeClassificationDataset(dataset_path, config)

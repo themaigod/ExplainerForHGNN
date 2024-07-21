@@ -42,8 +42,8 @@ def confusion_matrix(logits: torch.Tensor, labels: torch.Tensor):
 
 node_classification_support_metrics = {
     'accuracy': accuracy,
-    'MacroF1': MacroF1,
-    'MicroF1': MicroF1,
+    'Macro-F1': MacroF1,
+    'Micro-F1': MicroF1,
     'roc_auc_score': roc_auc_score,
     'confusion_matrix': confusion_matrix
 }

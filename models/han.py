@@ -204,7 +204,7 @@ class GATConv(nn.Module):
             if self.res_fc.bias is not None:
                 nn.init.constant_(self.res_fc.bias, 0)
 
-    def forward(self, h, g, edge_weight=None, get_attention=False):
+    def forward(self, g, h, edge_weight=None, get_attention=False):
         r"""
         Description
         -----------
@@ -274,21 +274,21 @@ class GATConv(nn.Module):
         shape = shape + (self.num_heads,)
         attention = torch.sparse_coo_tensor(g._indices(), e, shape)
         attention = torch.sparse.softmax(attention, dim=0)
+
+        attention = attention.coalesce().values()
+
         attention = self.attn_drop(attention)
 
         if edge_weight is not None:
-            # edge_weight: (E,)
-            # attention: (N, N, num_heads)
             edge_weight = edge_weight.unsqueeze(1).expand(-1, self.num_heads)
-            edge_weight = torch.sparse_coo_tensor(g._indices(), edge_weight, shape)
+            # edge_weight = torch.sparse_coo_tensor(g._indices(), edge_weight, shape)
             attention = attention * edge_weight
 
         h_prime = []
-        attention = attention.coalesce()
-        values = attention.values()
         for i in range(self.num_heads):
-            head_values = values[:, i]
-            attention_i = torch.sparse_coo_tensor(attention.indices(), head_values,
+            head_values = attention[:, i]
+            g = g.coalesce()
+            attention_i = torch.sparse_coo_tensor(g.indices(), head_values,
                                                   g.shape)
             # h_prime.append(torch.spmm(attention_i, Wh_dst[:, i]))
             h_prime.append(torch.spmm(attention_i.t(), Wh_src[:, i]))
@@ -388,12 +388,13 @@ class HAN(BaseModel):
         self.model_name = 'HAN'
         self.dataset_adaptation()
         self.prepare_modules()
+        self.to(self.device)
 
     def prepare_modules(self):
         self.layers = nn.ModuleList()
         self.layers.append(
             HANLayer(num_meta_paths=self.num_meta_paths,
-                     in_size=self.num_features,
+                     in_size=self.dataset.num_features,
                      out_size=self.config['hidden_units'],
                      layer_num_heads=self.config['num_heads'][0],
                      dropout=self.config['dropout']))
@@ -422,15 +423,16 @@ class HAN(BaseModel):
         tensor_gs = []
         for i in range(len(gs)):
             g = gs[i]
+            g = g.tocoo()
             indices = np.vstack((g.row, g.col))
             values = g.data
             tensor_gs.append(
                 torch.sparse_coo_tensor(indices, values, g.shape).to(self.device)
                 .coalesce())
         self.gs = tensor_gs
-        self.features = torch.tensor(self.dataset.node_features).to(self.device)
+        self.features = torch.tensor(self.dataset.node_features).to(self.device).float()
         self.num_meta_paths = len(self.meta_paths)
-        # self.labels = torch.tensor(self.dataset.labels).to(self.device)
+
         self.train_mask = torch.from_numpy(np.array(self.dataset.labels[0])[:, 0]).type(
             torch.long).to(self.device)
         train_target = torch.from_numpy(np.array(self.dataset.labels[0])[:, 1]).type(
@@ -443,7 +445,8 @@ class HAN(BaseModel):
             torch.long).to(self.device)
         test_target = torch.from_numpy(np.array(self.dataset.labels[2])[:, 1]).type(
             torch.long).to(self.device)
-        target_tensor = torch.zeros(len(self.dataset.node_features), dtype=torch.long)
+        target_tensor = torch.zeros(len(self.dataset.node_features), dtype=torch.long,
+                                    device=self.device)
         target_tensor[self.train_mask] = train_target
         target_tensor[self.valid_mask] = valid_target
         target_tensor[self.test_mask] = test_target
@@ -457,12 +460,13 @@ class HAN(BaseModel):
             raise ValueError("Meta path should have at least one node type.")
 
         if len(meta_path) == 2:
-            index = edge_directions['edge_type'].index([meta_path[0], meta_path[1]])
+            index = edge_directions['edge_types'].index([meta_path[0], meta_path[1]])
             return edges[index]
 
         # we need to use the multiplication of adjacency matrices to achieve the metapath
         for i in range(1, len(meta_path)):
-            index = edge_directions['edge_type'].index([meta_path[i - 1], meta_path[i]])
+            index = edge_directions['edge_types'].index(
+                [meta_path[i - 1], meta_path[i]])
             if i == 1:
                 adj = edges[index]
             else:
@@ -473,9 +477,34 @@ class HAN(BaseModel):
 
         return adj
 
+    def standard_input(self):
+        return self.gs, self.features
+
     def forward(self):
-        g = self.gs
-        h = self.features
+        g, h = self.standard_input()
+
+        for gnn in self.layers:
+            h = gnn(g, h)
+
+        return self.predict(h)
+
+    def loss(self, outputs):
+        return F.cross_entropy(outputs[self.train_mask], self.labels[self.train_mask])
+
+    def custom_loss(self, outputs, mask):
+        return F.cross_entropy(outputs[mask], self.labels[mask])
+
+
+    def custom_forward(self, handle_fn):
+        """
+        Custom forward function to allow for custom handling of the input of the model.
+        Some explainer and explainer metrics require modification of the input before
+        passing it to the model. This function allows for that modification.
+        :param handle_fn:
+        :return:
+        """
+
+        g, h = handle_fn(self)
 
         for gnn in self.layers:
             h = gnn(g, h)

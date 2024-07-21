@@ -9,14 +9,14 @@ class Explainer:
         self.model.eval()
         pass
 
-    def eval(self):
+    def evaluate(self):
         pass
 
     def visualize(self):
         pass
 
-    def get_metrics(self):
+    def get_summary(self):
         pass
 
-    def save_metrics(self):
+    def save_summary(self):
         pass

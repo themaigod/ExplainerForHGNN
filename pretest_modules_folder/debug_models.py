@@ -1,5 +1,6 @@
 import torch
-from models.han import GATLayer
+from models.han import GATConv as GATLayer, HAN
+from datasets import ACM
 import dgl
 from dgl.nn.pytorch.conv import GATConv
 
@@ -111,3 +112,24 @@ def debug_gat_layer_bipartite_with_edge_weights():
     assert compare_gradients(h_src, h_src)
     assert compare_gradients(h_dst, h_dst)
     assert compare_gradients(edge_weights, edge_weights)
+
+
+def debug_han():
+    import json
+    with open('model_configs/HAN_ACM.json') as f:
+        config = json.load(f)
+
+    dataset = ACM("./data/ACM",
+                  {"labels": "./data/ACM/labels.pkl", "check_data_size": True})
+
+    han = HAN(config, dataset)
+
+    # Test forward
+    output = han.forward()
+
+    # Training
+    han.fit()
+
+    summary = han.get_summary()
+
+    print(summary)

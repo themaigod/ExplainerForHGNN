@@ -17,72 +17,13 @@ To run the code, you can use the following command:
 python main.py --dataset {dataset_name} --model {model_name} --explainer {explainer_name} --random_seed {seed}
 ```
 
-You can do some customization by changing `./dataset_configs/{dataset_name}.json`, `./model_configs/{model_name}_{dataset_name}.json` 
+You can do some customization by changing `./dataset_configs/{dataset_name}.json`, `./model_configs/{model_name}_{dataset_name}.json`
 and `./explainer_configs/{explainer_name}.json`.
 
 ## Explainer
 
-CGE
-
-```bibtex
-@inproceedings{10.1145/3539597.3570378,
-author = {Fang, Junfeng and Wang, Xiang and Zhang, An and Liu, Zemin and He, Xiangnan and Chua, Tat-Seng},
-title = {Cooperative Explanations of Graph Neural Networks},
-year = {2023},
-isbn = {9781450394079},
-publisher = {Association for Computing Machinery},
-address = {New York, NY, USA},
-url = {https://doi.org/10.1145/3539597.3570378},
-doi = {10.1145/3539597.3570378},
-booktitle = {Proceedings of the Sixteenth ACM International Conference on Web Search and Data Mining},
-pages = {616–624},
-numpages = {9},
-keywords = {explainability, graph neural networks, lottery ticket hypothesis},
-location = {, Singapore, Singapore, },
-series = {WSDM '23}
-}
-```
-
-[//]: # (GCFExplainer)
-
 [//]: # ()[test.py](..%2F..%2F..%2F..%2Fwechat%20file%2FWeChat%20Files%2Fwxid_87nrr49t3h7222%2FFileStorage%2FFile%2F2024-06%2Ftest.py)
 [//]: # (```bibtex)
-
-[//]: # (@inproceedings{10.1145/3539597.3570376,)
-
-[//]: # (author = {Huang, Zexi and Kosan, Mert and Medya, Sourav and Ranu, Sayan and Singh, Ambuj},)
-
-[//]: # (title = {Global Counterfactual Explainer for Graph Neural Networks},)
-
-[//]: # (year = {2023},)
-
-[//]: # (isbn = {9781450394079},)
-
-[//]: # (publisher = {Association for Computing Machinery},)
-
-[//]: # (address = {New York, NY, USA},)
-
-[//]: # (url = {https://doi.org/10.1145/3539597.3570376},)
-
-[//]: # (doi = {10.1145/3539597.3570376},)
-
-[//]: # (booktitle = {Proceedings of the Sixteenth ACM International Conference on Web Search and Data Mining},)
-
-[//]: # (pages = {141–149},)
-
-[//]: # (numpages = {9},)
-
-[//]: # (keywords = {counterfactual explanation, graph neural networks},)
-
-[//]: # (location = {<conf-loc>, <city>Singapore</city>, <country>Singapore</country>, </conf-loc>},)
-
-[//]: # (series = {WSDM '23})
-
-[//]: # (})
-
-[//]: # (```)
-
-[//]: # (Only for graph classification, not for node classification.)
 
 PGExplainer
 
@@ -112,6 +53,12 @@ GNNExplainer
 }
 ```
 
+Traditionally, author code use threshould to get the hard mask. In practically, there is no work since it can all below the threshold. we use control sparsity instead.
+
+
+
+
+
 SubgraphX
 
 ```bibtex
@@ -123,32 +70,6 @@ SubgraphX
   url={https://api.semanticscholar.org/CorpusID:231861768}
 }
 ```
-
-[//]: # (RCExplainer)
-
-[//]: # ()
-[//]: # (```bibtex)
-
-[//]: # (@article{bajaj2021robust,)
-
-[//]: # (  title={Robust counterfactual explanations on graph neural networks},)
-
-[//]: # (  author={Bajaj, Mohit and Chu, Lingyang and Xue, Zi Yu and Pei, Jian and Wang, Lanjun and Lam, Peter Cho-Ho and Zhang, Yong},)
-
-[//]: # (  journal={Advances in Neural Information Processing Systems},)
-
-[//]: # (  volume={34},)
-
-[//]: # (  pages={5644--5655},)
-
-[//]: # (  year={2021})
-
-[//]: # (})
-
-[//]: # (```)
-
-[//]: # (Cannot find the code for RCExplainer, the authors' code link can not be visited.)
-
 
 SA
 
@@ -204,3 +125,57 @@ The applicable version for GNN is:
   keywords={Deep Learning;Deep Learning},
   doi={10.1109/CVPR.2019.01103}}
 ```
+
+[//]: #
+[//]: #
+[//]: #
+[//]: #
+[//]: #
+[//]: #
+[//]: #
+[//]: #
+[//]: #
+[//]: #
+[//]: #
+[//]: #
+[//]: #
+[//]: #
+[//]: #
+[//]: #
+[//]: #
+[//]: #
+[//]: #
+[//]: #
+[//]: #
+[//]: #
+[//]: #
+[//]: #
+[//]: #
+[//]: #
+[//]: #
+[//]: #
+[//]: #
+[//]: #
+[//]: #
+[//]: #
+[//]: #
+[//]: #
+[//]: #
+[//]: #
+[//]: #
+[//]: #
+[//]: #
+[//]: #
+[//]: #
+[//]: #
+[//]: #
+[//]: #
+[//]: #
+[//]: #
+[//]: #
+[//]: #
+[//]: #
+[//]: #
+[//]: #
+[//]: #
+[//]: #
