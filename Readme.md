@@ -8,6 +8,7 @@ We do fair comparison between different models and evaluate their performance on
 ## Requirements
 
 - Python 3.10
+- Pytorch
 
 ## Run the code
 
@@ -18,12 +19,17 @@ python main.py --dataset {dataset_name} --model {model_name} --explainer {explai
 ```
 
 You can do some customization by changing `./dataset_configs/{dataset_name}.json`, `./model_configs/{model_name}_{dataset_name}.json`
-and `./explainer_configs/{explainer_name}.json`.
+and `./explainer_configs/{explainer_name}_{model_name}_{dataset_name}.json`.
 
 ## Explainer
 
-[//]: # ()[test.py](..%2F..%2F..%2F..%2Fwechat%20file%2FWeChat%20Files%2Fwxid_87nrr49t3h7222%2FFileStorage%2FFile%2F2024-06%2Ftest.py)
-[//]: # (```bibtex)
+Now Dataset available: ACM
+
+Now model available: HAN
+
+Now explainer available: GNNExpplainer
+
+### Plan:
 
 PGExplainer
 
@@ -52,12 +58,6 @@ GNNExplainer
   url={https://api.semanticscholar.org/CorpusID:202572927}
 }
 ```
-
-Traditionally, author code use threshould to get the hard mask. In practically, there is no work since it can all below the threshold. we use control sparsity instead.
-
-
-
-
 
 SubgraphX
 
@@ -125,57 +125,3 @@ The applicable version for GNN is:
   keywords={Deep Learning;Deep Learning},
   doi={10.1109/CVPR.2019.01103}}
 ```
-
-[//]: #
-[//]: #
-[//]: #
-[//]: #
-[//]: #
-[//]: #
-[//]: #
-[//]: #
-[//]: #
-[//]: #
-[//]: #
-[//]: #
-[//]: #
-[//]: #
-[//]: #
-[//]: #
-[//]: #
-[//]: #
-[//]: #
-[//]: #
-[//]: #
-[//]: #
-[//]: #
-[//]: #
-[//]: #
-[//]: #
-[//]: #
-[//]: #
-[//]: #
-[//]: #
-[//]: #
-[//]: #
-[//]: #
-[//]: #
-[//]: #
-[//]: #
-[//]: #
-[//]: #
-[//]: #
-[//]: #
-[//]: #
-[//]: #
-[//]: #
-[//]: #
-[//]: #
-[//]: #
-[//]: #
-[//]: #
-[//]: #
-[//]: #
-[//]: #
-[//]: #
-[//]: #

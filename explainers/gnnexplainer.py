@@ -331,24 +331,17 @@ class GNNExplainerMetaCore(Explainer):
             else:
                 sym_mask = self.edge_mask
 
-            # sym_mask = (sym_mask + sym_mask.t()) / 2
-            sym_mask = [(em + em.t()) / 2 for em in sym_mask]
-
             masked_gs_generated = []
             for i in range(len(gs)):
-                # firstly, we need to construct the symmetric mask to torch.sparse_coo_tensor
-                # because its shape is (E,) and we need to convert it to (N, N)
-                sym_mask_sparse = torch.sparse_coo_tensor(gs[i].indices(), sym_mask[i],
+                sym_mask_sparse = torch.sparse_coo_tensor(gs[i].indices(),
+                                                          sym_mask[i],
                                                           gs[i].shape)
-                sym_mask_sparse = (sym_mask_sparse + sym_mask_sparse.t()) / 2
                 masked_gs = gs[i] * sym_mask_sparse
                 if self.config['use_mask_bias']:
                     edge_mask_bias_sparse = torch.sparse_coo_tensor(gs[i].indices(),
                                                                     self.edge_mask_bias[
                                                                         i],
                                                                     gs[i].shape)
-                    edge_mask_bias_sparse = (
-                                                edge_mask_bias_sparse + edge_mask_bias_sparse.t()) / 2
                     edge_mask_bias_sparse = fn.relu6(
                         edge_mask_bias_sparse * 6) / 6  # not sure why, just following the original implementation
                     masked_gs = masked_gs + edge_mask_bias_sparse
@@ -449,13 +442,6 @@ class GNNExplainerMetaCore(Explainer):
 
     @property
     def edge_mask_for_output(self):
-        edge_mask = self.edge_mask
-        # do transpose and average
-        for em, g in zip(edge_mask, self.neighbor_input['gs']):
-            g = g.coalesce()
-            indices = g.indices()
-            # !TODO: finish it
-
         if self.config['edge_mask_activation'] == 'sigmoid':
             return [fn.sigmoid(em).clone().detach() for em in self.edge_mask]
         elif self.config['edge_mask_activation'] == 'relu':
@@ -468,7 +454,6 @@ class GNNExplainerMetaCore(Explainer):
         if self.config['feature_mask_use_sigmoid']:
             return fn.sigmoid(self.feature_mask[0]).clone().detach()
         else:
-            .
             return self.feature_mask[0].clone().detach()
 
 
