@@ -1,11 +1,19 @@
-from .explainer import Explainer
+from .explainer import Explainer, ExplainerCore
 import torch
 import torch.nn.functional as fn
 import torch.nn as nn
 import math
-from .utils import node_scores, node_dataset_scores, standard_explanation, \
-    node_score_explanations, node_dataset_score_explanations, \
-    node_dataset_score_explanations_combined
+# from .utils import node_scores, node_dataset_scores, standard_explanation, \
+#     node_score_explanations, node_dataset_score_explanations, \
+#     node_dataset_score_explanations_combined
+from .node_scores import node_scores
+from .node_dataset_scores import node_dataset_scores
+from .prepare_explanation_for_node_scores import standard_explanation
+from .prepare_combined_explanation_for_node_dataset_scores import \
+    prepare_combined_explanation_fn_for_node_dataset_scores
+from .prepare_explanation_for_node_scores import prepare_explanation_fn_for_node_scores
+from .prepare_explanation_for_node_dataset_scores import \
+    prepare_explanation_fn_for_node_dataset_scores
 from .explanation import NodeExplanation, NodeExplanationCombination
 
 
@@ -13,7 +21,7 @@ def mean(iterable):
     return sum(iterable) / len(iterable)
 
 
-class GNNExplainerMetaCore(Explainer):
+class GNNExplainerMetaCore(ExplainerCore):
     def __init__(self, config):
         super().__init__(config)
         self.record_metrics = self.config.get('record_metrics', None)
@@ -22,6 +30,7 @@ class GNNExplainerMetaCore(Explainer):
 
     def explain(self, model, **kwargs):
         self.model = model
+        self.model.eval()
 
         self.init_params()
 
@@ -91,6 +100,7 @@ class GNNExplainerMetaCore(Explainer):
         new_gs = []
         for g in gs:
             indices = g.indices()
+            # !TODO: maybe some problems here, not consider n_hop
             mask = (indices[0] == self.node_id) & (indices[1] == self.node_id)
             new_indices = torch.stack(
                 [torch.tensor([self.recovery_dict[node] for node in indices[0][mask]]),
@@ -167,7 +177,7 @@ class GNNExplainerMetaCore(Explainer):
         explanation = NodeExplanation()
         explanation = standard_explanation(explanation, self)
         for metric in self.config['eval_metrics']:
-            node_dataset_score_explanations[metric](explanation, self)
+            prepare_explanation_fn_for_node_dataset_scores[metric](explanation, self)
         self.explanation = explanation
         return explanation
 
@@ -211,7 +221,8 @@ class GNNExplainerMetaCore(Explainer):
                     record[epoch]['loss'] = loss.item()
                     explanation = NodeExplanation()
                     for metric in self.record_metrics:
-                        node_score_explanations[metric](explanation, self)
+                        prepare_explanation_fn_for_node_scores[metric](explanation,
+                                                                       self)
                         record[epoch][metric] = node_scores[metric](explanation)
 
                     output_str = 'Node: {} Epoch: {}, Loss: {:.4f}'.format(self.node_id,
@@ -333,6 +344,7 @@ class GNNExplainerMetaCore(Explainer):
 
             masked_gs_generated = []
             for i in range(len(gs)):
+                gs[i] = gs[i].coalesce()
                 sym_mask_sparse = torch.sparse_coo_tensor(gs[i].indices(),
                                                           sym_mask[i],
                                                           gs[i].shape)
@@ -456,6 +468,24 @@ class GNNExplainerMetaCore(Explainer):
         else:
             return self.feature_mask[0].clone().detach()
 
+    def get_custom_input_handle_fn(self, masked_gs=None, feature_mask=None):
+        """
+        Get the custom input handle function for the model.
+        :return:
+        """
+
+        def handle_fn(model):
+            if model is None:
+                model = self.model
+            gs, features = self.extract_neighbors_input()
+            if masked_gs is not None:
+                gs = masked_gs
+            if feature_mask is not None:
+                features = gs * feature_mask
+            return gs, features
+
+        return handle_fn
+
 
 class GNNExplainerMeta(Explainer):
     def __init__(self, config):
@@ -491,6 +521,27 @@ class GNNExplainerMeta(Explainer):
 
         return result
 
+    def explain_selected_nodes(self, model, selected_nodes):
+        self.model = model
+        result = []
+        test_labels = self.model.dataset.labels[2]
+        for idx, label in test_labels:
+            if idx in selected_nodes:
+                explain_node = GNNExplainerMetaCore(self.config)
+                explanation = explain_node.explain(self.model,
+                                                   node_id=idx)
+                result.append(explanation)
+
+        result = self.construct_explanation(result)
+
+        self.result = result
+
+        self.evaluate()
+
+        self.save_summary()
+
+        return result
+
     def construct_explanation(self, result):
         result = NodeExplanationCombination(node_explanations=result)
         if self.config.get('control_data', None) is not None:
@@ -505,7 +556,9 @@ class GNNExplainerMeta(Explainer):
         eval_result = {}
         if self.config.get('eval_metrics', None) is not None:
             for metric in self.config['eval_metrics']:
-                node_dataset_score_explanations_combined[metric](self.result, self)
+                # node_dataset_score_explanations_combined[metric](self.result, self)
+                self.result = prepare_combined_explanation_fn_for_node_dataset_scores[
+                    metric](self.result, self)
                 eval_result[metric] = node_dataset_scores[metric](self.result)
 
         self.eval_result = eval_result

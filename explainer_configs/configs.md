@@ -49,16 +49,44 @@ Example:
     "Micro-F1",
     "roc_auc_score"
   ],
-  "summary_path": null
+  "summary_path": null,
+  "edge_mask_hard_method": "original",
+  "feature_mask_hard_method": "original",
+  "threshold_auc": [
+    0.0,
+    0.1,
+    0.2,
+    0.3,
+    0.4,
+    0.5,
+    0.6,
+    0.7,
+    0.8,
+    0.9,
+    1.0
+  ],
+  "auc_use_feature_mask": true,
+  "auc_use_edge_mask": true,
+  "top_k_for_faith_feature": 0.25,
+  "top_k_for_faith_edge": 0.25,
+  "perturb_ratio_in_gs_for_stability": 0.001,
+  "perturb_std_in_features_for_stability": 0.01,
+  "stability_times": 25,
+  "pos_weight_characterization_score": 0.5,
+  "neg_weight_characterization_score": 0.5,
+  "top_k_for_stability_feature": 0.25,
+  "top_k_for_stability_edge": 0.25
 }
 ```
 
 (key: available options):
+
 - `record_metrics`: (list[str]) List of metrics to be recorded during training.
 	- mask_density: Density of the mask.
 - `extract_neighbors`: (true, false) If set to `true`, the neighbors will be extracted. Otherwise, use the whole graph.
-- `n_hop`: (int) Number of hops to extract neighbors. If `extract_neighbors` is set to `false`, this value will be ignored.
-You can count the number of graph convolutions stacked in the model to determine the number of hops.
+- `n_hop`: (int) Number of hops to extract neighbors. If `extract_neighbors` is set to `false`, this value will be
+  ignored.
+  You can count the number of graph convolutions stacked in the model to determine the number of hops.
 - `init_strategy_for_edge`: (normal, constant) Initialization strategy for edge mask.
 - `use_mask_bias`: (true, false) If set to `true`, the mask bias will be used.
 - `init_strategy_for_feature`: (normal, constant) Initialization strategy for feature mask.
@@ -99,3 +127,84 @@ You can count the number of graph convolutions stacked in the model to determine
 	- Micro-F1: Micro-F1 score.
 	- roc_auc_score: ROC AUC score.
 - `summary_path`: (string, null) Path to save the summary. If set to `null`, the summary will not be saved.
+  (key: available options, eval_metrics):
+- `edge_mask_hard_method`: (threshold, auto_threshold, top_k, original)
+  [sparsity, fidelity_neg, fidelity_pos, unfaithfulness, graph_exp_faith_edge, MacroF1, MicroF1, fidelity_curve_auc]
+  Hard method for edge mask.
+- `edge_mask_threshold`: (float)
+  [sparsity, fidelity_neg, fidelity_pos, unfaithfulness, graph_exp_faith_edge, MacroF1, MicroF1]
+  Threshold for edge mask. Only used when `edge_mask_hard_method` is set to `threshold`.
+- `threshold_percentage_edge`: (float)
+  [sparsity, fidelity_neg, fidelity_pos, unfaithfulness, graph_exp_faith_edge, MacroF1, MicroF1]
+  Threshold percentage for edge mask. Only used when `edge_mask_hard_method` is set to `auto_threshold`.
+- `top_k_for_edge_mask`: (float)
+  [sparsity, fidelity_neg, fidelity_pos, unfaithfulness, graph_exp_faith_edge, MacroF1, MicroF1]
+  Top k for edge mask. Only used when `edge_mask_hard_method` is set to `top_k`.
+- `feature_mask_hard_method`: (threshold, auto_threshold, top_k, original)
+  [sparsity, fidelity_neg, fidelity_pos, unfaithfulness, graph_exp_faith_feature, MacroF1, MicroF1, fidelity_curve_auc]
+  Hard method for feature mask.
+- `feature_mask_threshold`: (float)
+  [sparsity, fidelity_neg, fidelity_pos, unfaithfulness, graph_exp_faith_feature, MacroF1, MicroF1]
+  Threshold for feature mask. Only used when `feature_mask_hard_method` is set to `threshold`.
+- `threshold_percentage_feature`: (float)
+  [sparsity, fidelity_neg, fidelity_pos, unfaithfulness, graph_exp_faith_feature, MacroF1, MicroF1]
+  Threshold percentage for feature mask. Only used when `feature_mask_hard_method` is set to `auto_threshold`.
+- `top_k_for_feature_mask`: (float)
+  [sparsity, fidelity_neg, fidelity_pos, unfaithfulness, graph_exp_faith_feature, MacroF1, MicroF1]
+  Top k for feature mask. Only used when `feature_mask_hard_method` is set to `top_k`.
+- `threshold_auc`: (list[float])
+  [fidelity_curve_auc]
+  Thresholds for AUC calculation. Only used when `edge_mask_threshold` or `feature_mask_threshold` is set to
+  `original` or `threshold`.
+- `top_k_for_auc`: (list[float])
+  [fidelity_curve_auc]
+  Top k for AUC calculation. Only used when `edge_mask_threshold` or `feature_mask_threshold` is set to
+  `top_k`.
+- `threshold_percentage_auc`: (list[float])
+  [fidelity_curve_auc]
+  Threshold percentage for AUC calculation. Only used when `edge_mask_threshold` or `feature_mask_threshold` is set to
+  `auto_threshold`.
+- `auc_use_feature_mask`: (true, false)
+  [fidelity_curve_auc]
+  If set to `true`, the feature mask will be used for AUC calculation. `auc_use_feature_mask` and `auc_use_edge_mask`
+  cannot be set to `false` at the same time.
+- `auc_use_edge_mask`: (true, false)
+  [fidelity_curve_auc]
+  If set to `true`, the edge mask will be used for AUC calculation. `auc_use_feature_mask` and `auc_use_edge_mask`
+  cannot be set to `false` at the same time.
+- `top_k_for_faith_feature`: (float)
+  [graph_exp_faith_feature]
+  Top k for graph explanation faithfulness for feature.
+- `top_k_for_faith_edge`: (float)
+  [graph_exp_faith_edge]
+  Top k for graph explanation faithfulness for edge.
+- `perturb_ratio_in_gs_for_stability`: (float)
+  [graph_exp_stability_feature, graph_exp_stability_edge]
+  Perturbation ratio in graph structure for stability. We use rewiring (swapping) method to perturb the graph structure.
+  u--v u v
+  becomes | |
+  x--y x y
+- `perturb_std_in_features_for_stability`: (float)
+  [graph_exp_stability_feature, graph_exp_stability_edge]
+  Standard deviation in features for stability. We use Gaussian noise to perturb the features.
+- `stability_times`: (int)
+  [graph_exp_stability_feature, graph_exp_stability_edge]
+  Number of times to calculate stability to get the maximum value.
+- `pos_weight_characterization_score`: (float)
+  [characterization_score]
+  Weight for fidelity_pos in characterization
+  score. `pos_weight_characterization_score` + `neg_weight_characterization_score`
+  should be equal to 1.
+- `neg_weight_characterization_score`: (float)
+  [characterization_score]
+  Weight for fidelity_neg in characterization
+  score. `pos_weight_characterization_score` + `neg_weight_characterization_score`
+  should be equal to 1.
+- `top_k_for_stability_feature`: (float)
+  [graph_exp_stability_feature]
+  Top k for graph explanation stability for feature.
+- `top_k_for_stability_edge`: (float)
+  [graph_exp_stability_edge]
+  Top k for graph explanation stability for edge.
+
+

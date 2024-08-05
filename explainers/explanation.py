@@ -81,6 +81,8 @@ class NodeExplanationCombination(BaseExplanation):
         return len(self.node_explanations)
 
     def __getattr__(self, item):
+        if item in self.control_data:
+            return self.control_data[item]
         result = [self.node_explanations[i].__getattr__(item) for i in
                   range(len(self.node_explanations))]
         # check if all the elements in the list are None

@@ -22,6 +22,9 @@ def debug_GNNExplainerMeta():
 
     explainer = GNNExplainerMeta(config)
 
-    result = explainer.explain(model)
+    selected_nodes = dataset.labels[2][: 10]
+    selected_nodes = [i[0] for i in selected_nodes]
+
+    result = explainer.explain_selected_nodes(model, selected_nodes)
 
     return result
