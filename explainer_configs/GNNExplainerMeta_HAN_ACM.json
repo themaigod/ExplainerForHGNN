@@ -36,7 +36,7 @@
     "Micro-F1",
     "roc_auc_score"
   ],
-  "summary_path": null,
+  "summary_path": "explainer_summary/HAN_ACM_GNNExplainerMeta_summary.json",
   "edge_mask_hard_method": "auto_threshold",
   "threshold_percentage_edge": 0.5,
   "feature_mask_hard_method": "auto_threshold",
@@ -64,5 +64,6 @@
   "pos_weight_characterization_score": 0.5,
   "neg_weight_characterization_score": 0.5,
   "top_k_for_stability_feature": 0.25,
-  "top_k_for_stability_edge": 0.25
+  "top_k_for_stability_edge": 0.25,
+  "device": 0
 }

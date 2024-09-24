@@ -485,7 +485,7 @@ class GNNExplainerMetaCore(ExplainerCore):
             if masked_gs is not None:
                 gs = masked_gs
             if feature_mask is not None:
-                features = gs * feature_mask
+                features = features * feature_mask
             return gs, features
 
         return handle_fn
@@ -581,11 +581,11 @@ class GNNExplainerMeta(Explainer):
 
     def save_explanation(self):
         if self.config.get('explanation_path', None) is not None:
+            import os
+            os.makedirs(os.path.dirname(self.config['explanation_path']),
+                        exist_ok=True)
             import json
             with open(self.config['explanation_path'], 'w') as f:
-                import os
-                os.makedirs(os.path.dirname(self.config['explanation_path']),
-                            exist_ok=True)
                 json.dump(self.result.to_json(), f)
 
 

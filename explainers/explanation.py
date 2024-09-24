@@ -21,7 +21,7 @@ class NodeExplanation(BaseExplanation):
     def safe_tensor_copy(tensor):
         if tensor is not None:
             if isinstance(tensor, torch.Tensor):
-                return tensor.clone().detach()
+                return tensor.cpu().clone().detach()
             if isinstance(tensor, list):
                 return [NodeExplanation.safe_tensor_copy(t) for t in tensor]
             if isinstance(tensor, dict):

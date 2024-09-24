@@ -214,8 +214,9 @@ class ExplainerCore:
         :return:
         """
         self.device = device
+        device_string = "cuda:{}".format(device) if device != "cpu" else device
         for module in self.registered_modules_and_params.values():
-            module.to(device)
+            module.to(device_string)
         return self
 
 
@@ -224,7 +225,9 @@ class Explainer:
         self.config = config
         self.model = None
         self.metrics = config.get("metrics", None)
-        self.device = "cpu"
+        self.device = config.get("device", "cpu")
+        if self.device is None:
+            self.device = "cpu"
         self.registered_modules_and_params = {}
 
     def explain(self, model):
@@ -260,8 +263,9 @@ class Explainer:
         :return:
         """
         self.device = device
+        device_string = "cuda:{}".format(device) if device != "cpu" else device
         for module in self.registered_modules_and_params.values():
-            module.to(device)
+            module.to(device_string)
         return self
 
     def save_explanation(self):

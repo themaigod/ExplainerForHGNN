@@ -12,7 +12,10 @@ class ACM(NodeClassificationDataset):
         if config.get('check_data_size', False):
             self.check_data_size()
 
-        self.num_classes = len(set(self.labels[0][:, 1]))
+        # avoid in train set, some classes are not included
+        self.num_classes = max(len(set(i[1] for i in self.labels[0])),
+                               len(set(i[1] for i in self.labels[1])),
+                               len(set(i[1] for i in self.labels[2])))
         self.num_features = self.node_features.shape[1]
 
     def load_data(self):
@@ -50,7 +53,6 @@ class ACM(NodeClassificationDataset):
         for i, shape in enumerate(edge_shapes):
             assert num_nodes == shape[
                 0], f"Node features and subgraph {i} have different sizes"
-
 
 # if __name__ == "__main__":
 #     dataset = ACM("../data/acm", {"labels": "../data/acm/labels.pkl", "check_data_size": True})

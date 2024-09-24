@@ -31,6 +31,9 @@ def set_seed(seed, ensure_reproducibility=False):
         torch.cuda.manual_seed(seed)
 
     torch.use_deterministic_algorithms(True)
+    import os
+    os.environ[
+        "CUBLAS_WORKSPACE_CONFIG"] = ":4096:8"  # because of the suggestion from https://pytorch.org/docs/stable/notes/randomness.html
     if ensure_reproducibility:
         torch.backends.cudnn.benchmark = False
 
@@ -56,7 +59,8 @@ def train_model(model_name, dataset_path, device):
 
 
 def explain(model, explainer_name, device):
-    explainer = load_explainer(explainer_name)
+    explainer = load_explainer(explainer_name, model.__class__.__name__,
+                               model.dataset.__class__.__name__)
     explainer.to(device)
     result = explainer.explain(model)
     print("Explanation Summary:")
@@ -86,3 +90,7 @@ def main():
     model = train_model(args.model, args.dataset, args.device)
     explainer = explain(model, args.explainer, args.device)
     # visualize(explainer)
+
+
+if __name__ == '__main__':
+    main()

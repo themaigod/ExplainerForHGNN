@@ -577,7 +577,7 @@ class HAN(BaseModel):
         for metric in metrics:
             self.summary[metric] = results[metric]
 
-        if self.config['save_summary']:
+        if self.config['summary_path']:
             self.save_summary()
 
         return self.summary
@@ -585,7 +585,7 @@ class HAN(BaseModel):
     def save_summary(self):
         if self.config['summary_path'] is None:
             return
+        import os
+        os.makedirs(os.path.dirname(self.config['summary_path']), exist_ok=True)
         with open(self.config['summary_path'], 'w') as f:
-            import os
-            os.makedirs(os.path.dirname(self.config['summary_path']), exist_ok=True)
             json.dump(self.summary, f)
