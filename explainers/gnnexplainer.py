@@ -483,9 +483,10 @@ class GNNExplainerMetaCore(ExplainerCore):
                 model = self.model
             gs, features = self.extract_neighbors_input()
             if masked_gs is not None:
-                gs = masked_gs
+                gs = [i.to(self.device_string) for i in masked_gs]
             if feature_mask is not None:
-                features = features * feature_mask
+                feature_mask_device = feature_mask.to(self.device_string)
+                features = features * feature_mask_device
             return gs, features
 
         return handle_fn
