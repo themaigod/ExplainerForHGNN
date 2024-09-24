@@ -20,5 +20,6 @@ def load_dataset(dataset_path):
         return globals()[dataset_name](dataset_path, config)
     except:
         print(
-            f"Warning: Dataset {dataset_name} not found specific loader. This may cause errors.")
+            f"Warning: Dataset {dataset_name} not found specific loader." + \
+            "This may cause errors. \n Using the default (NodeClassificationDataset).")
         return NodeClassificationDataset(dataset_path, config)

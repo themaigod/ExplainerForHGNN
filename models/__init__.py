@@ -3,8 +3,6 @@ import json
 all = [
     "load_model",
     "HAN",
-    "GCN",
-    "GAT",
     "MAGNN",
     "HGT",
     "RGCN",
@@ -26,15 +24,11 @@ def load_model(model_name, dataset):
 
     if model_name == "HAN":
         return HAN(config, dataset)
-    elif model_name == "GCN":
-        return GCN(config, dataset)
-    elif model_name == "GAT":
-        return GAT(config, dataset)
-    elif model_name == "MAGNN":
-        return MAGNN(config, dataset)
-    elif model_name == "HGT":
-        return HGT(config, dataset)
-    elif model_name == "RGCN":
-        return RGCN(config, dataset)
+    # elif model_name == "MAGNN":
+    #     return MAGNN(config, dataset)
+    # elif model_name == "HGT":
+    #     return HGT(config, dataset)
+    # elif model_name == "RGCN":
+    #     return RGCN(config, dataset)
     else:
         return BaseModel(config, dataset)

@@ -23,9 +23,9 @@ and `./explainer_configs/{explainer_name}_{model_name}_{dataset_name}.json`.
 
 ## Explainer
 
-Now Dataset available: ACM
+Now Dataset available: ACM, DBLP, IMDB
 
-Now model available: HAN
+Now model available: HAN (with GAT), HAN (with GCN)
 
 Now explainer available: GNNExpplainer
 

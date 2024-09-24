@@ -27,19 +27,22 @@ def load_explainer(explainer_name):
     with open(f"./explainer_configs/{explainer_name}.json", "r") as f:
         config = json.load(f)
 
-    if explainer_name == "GradExplainer":
-        return GradExplainer(config)
-    elif explainer_name == "SAExplainer":
-        return SAExplainer(config)
-    elif explainer_name == "GOAtExplainer":
-        return GOAtExplainer(config)
-    elif explainer_name == "SubgraphXExplainer":
-        return SubgraphXExplainer(config)
-    elif explainer_name == "GNNExplainer":
-        return GNNExplainer(config)
-    elif explainer_name == "PGExplainer":
-        return PGExplainer(config)
-    elif explainer_name == "CGEExplainer":
-        return CGEExplainer(config)
+    if explainer_name == "GNNExplainerMeta":
+        return GNNExplainerMeta(config)
+
+    # elif explainer_name == "GradExplainer":
+    #     return GradExplainer(config)
+    # elif explainer_name == "SAExplainer":
+    #     return SAExplainer(config)
+    # elif explainer_name == "GOAtExplainer":
+    #     return GOAtExplainer(config)
+    # elif explainer_name == "SubgraphXExplainer":
+    #     return SubgraphXExplainer(config)
+    # elif explainer_name == "GNNExplainer":
+    #     return GNNExplainer(config)
+    # elif explainer_name == "PGExplainer":
+    #     return PGExplainer(config)
+    # elif explainer_name == "CGEExplainer":
+    #     return CGEExplainer(config)
     else:
         return Explainer(config)

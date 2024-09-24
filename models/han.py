@@ -345,7 +345,7 @@ class HANLayer(nn.Module):
 
     Inputs
     ------
-    g : list[DGLGraph]
+    gs : list[torch.SparseTensor]
         List of graphs
     h : tensor
         Input features
@@ -380,6 +380,11 @@ class HANLayer(nn.Module):
 
 
 class HAN(BaseModel):
+    """
+    HAN model.
+    from `Heterogeneous Graph Attention Network
+    <https://arxiv.org/pdf/1903.07293.pdf>`__
+    """
     def __init__(self, config, dataset):
         super(HAN, self).__init__(config, dataset)
         assert self.dataset.hetero is True, "HAN only supports heterogeneous graph."
@@ -412,6 +417,8 @@ class HAN(BaseModel):
     def dataset_adaptation(self):
         if isinstance(self.dataset, ACM):
             self._dataset_adaptation_acm()
+        else:
+            raise NotImplementedError("The dataset is not implemented yet.")
 
     def _dataset_adaptation_acm(self):
         # read the metapaths used

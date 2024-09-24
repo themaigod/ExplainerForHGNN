@@ -4,6 +4,9 @@ class ExplainerCore:
         self.model = None
         self.metrics = config.get("metrics", None)
 
+        self.device = "cpu"
+        self.registered_modules_and_params = {}
+
     def init_params(self):
         """Initialize parameters for the explainer."""
         pass
@@ -204,12 +207,25 @@ class ExplainerCore:
         """
         pass
 
+    def to(self, device):
+        """
+        Set the device for the explainer core.
+        :param device:
+        :return:
+        """
+        self.device = device
+        for module in self.registered_modules_and_params.values():
+            module.to(device)
+        return self
+
 
 class Explainer:
     def __init__(self, config):
         self.config = config
         self.model = None
         self.metrics = config.get("metrics", None)
+        self.device = "cpu"
+        self.registered_modules_and_params = {}
 
     def explain(self, model):
         self.model = model
@@ -236,3 +252,14 @@ class Explainer:
 
     def save_summary(self):
         pass
+
+    def to(self, device):
+        """
+        Set the device for the explainer.
+        :param device:
+        :return:
+        """
+        self.device = device
+        for module in self.registered_modules_and_params.values():
+            module.to(device)
+        return self

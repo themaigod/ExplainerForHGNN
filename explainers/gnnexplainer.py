@@ -50,6 +50,10 @@ class GNNExplainerMetaCore(ExplainerCore):
             self.init_params_node_level()
         else:
             self.init_params_graph_level()
+        self.registered_modules_and_params = {
+            str(index): i for index, i in enumerate(self.get_required_fit_params())
+        }
+        self.to(self.device)
 
     def init_params_graph_level(self):
         pass
@@ -505,6 +509,7 @@ class GNNExplainerMeta(Explainer):
         test_labels = self.model.dataset.labels[2]
         for idx, label in test_labels:
             explain_node = GNNExplainerMetaCore(self.config)
+            explain_node.to(self.device)
             explanation = explain_node.explain(self.model,
                                                node_id=idx)
             result.append(explanation)
@@ -528,6 +533,7 @@ class GNNExplainerMeta(Explainer):
         for idx, label in test_labels:
             if idx in selected_nodes:
                 explain_node = GNNExplainerMetaCore(self.config)
+                explain_node.to(self.device)
                 explanation = explain_node.explain(self.model,
                                                    node_id=idx)
                 result.append(explanation)

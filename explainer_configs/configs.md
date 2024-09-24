@@ -82,7 +82,7 @@ Example:
 (key: available options):
 
 - `record_metrics`: (list[str]) List of metrics to be recorded during training.
-	- mask_density: Density of the mask.
+  - mask_density: Density of the mask.
 - `extract_neighbors`: (true, false) If set to `true`, the neighbors will be extracted. Otherwise, use the whole graph.
 - `n_hop`: (int) Number of hops to extract neighbors. If `extract_neighbors` is set to `false`, this value will be
   ignored.
@@ -107,25 +107,27 @@ Example:
 - `coff_laplacian`: (float) Coefficient for laplacian loss.
 - `mask_features`: (true, false) If set to `true`, the features will be masked.
 - `feature_mask_marginalize`: (true, false) If set to `true`, the feature mask will be marginalized.
+- `apply_mata_mask`: (true, false) If set to `true`, the mask will be applied to the meta-path. Noting that this
+  parameter is only supported in the those heterogeneous models that provide the meta-path importance tensor.
 - `opt_lr`: (float) Learning rate for optimizer.
 - `opt_wd`: (float) Weight decay for optimizer.
 - `opt_decay_rate`: (float, null) Decay rate for optimizer. Only used when `opt_scheduler` is set to `step`.
 - `opt_decay_step`: (int, null) Decay step for optimizer. Only used when `opt_scheduler` is set to `step`.
 - `opt_restart`: (int, null) Restart for optimizer. Only used when `opt_scheduler` is set to `cos`.
 - `eval_metrics`: (list[str]) List of metrics to be evaluated.
-	- fidelity_neg: Negative fidelity.
-	- fidelity_pos: Positive fidelity.
-	- characterization_score: Characterization score.
-	- fidelity_curve_auc: Fidelity curve AUC.
-	- unfaithfulness: Unfaithfulness.
-	- sparsity: Sparsity.
-	- graph_exp_faith_feature: Graph explanation faithfulness for feature.
-	- graph_exp_faith_edge: Graph explanation faithfulness for edge.
-	- graph_exp_stability_feature: Graph explanation stability for feature.
-	- graph_exp_stability_edge: Graph explanation stability for edge.
-	- Macro-F1: Macro-F1 score.
-	- Micro-F1: Micro-F1 score.
-	- roc_auc_score: ROC AUC score.
+  - fidelity_neg: Negative fidelity.
+  - fidelity_pos: Positive fidelity.
+  - characterization_score: Characterization score.
+  - fidelity_curve_auc: Fidelity curve AUC.
+  - unfaithfulness: Unfaithfulness.
+  - sparsity: Sparsity.
+  - graph_exp_faith_feature: Graph explanation faithfulness for feature.
+  - graph_exp_faith_edge: Graph explanation faithfulness for edge.
+  - graph_exp_stability_feature: Graph explanation stability for feature.
+  - graph_exp_stability_edge: Graph explanation stability for edge.
+  - Macro-F1: Macro-F1 score.
+  - Micro-F1: Micro-F1 score.
+  - roc_auc_score: ROC AUC score.
 - `summary_path`: (string, null) Path to save the summary. If set to `null`, the summary will not be saved.
   (key: available options, eval_metrics):
 - `edge_mask_hard_method`: (threshold, auto_threshold, top_k, original)
@@ -206,5 +208,3 @@ Example:
 - `top_k_for_stability_edge`: (float)
   [graph_exp_stability_edge]
   Top k for graph explanation stability for edge.
-
-
