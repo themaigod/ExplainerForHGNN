@@ -58,7 +58,11 @@ def train_model(model_name, dataset_path, device):
 def explain(model, explainer_name, device):
     explainer = load_explainer(explainer_name)
     explainer.to(device)
-    explainer.explain(model)
+    result = explainer.explain(model)
+    print("Explanation Summary:")
+    print("----------------")
+    for key, value in result.items():
+        print(f"{key}: {value}")
     explainer.save_explanation()
     return explainer
 

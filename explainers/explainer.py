@@ -263,3 +263,6 @@ class Explainer:
         for module in self.registered_modules_and_params.values():
             module.to(device)
         return self
+
+    def save_explanation(self):
+        pass

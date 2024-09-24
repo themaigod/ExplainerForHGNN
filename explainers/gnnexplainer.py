@@ -499,9 +499,9 @@ class GNNExplainerMeta(Explainer):
         self.model = model
 
         if self.model.dataset.single_graph:
-            self.node_level_explain()
+            return self.node_level_explain()
         else:
-            self.graph_level_explain()
+            return self.graph_level_explain()
 
     def node_level_explain(self):
 
@@ -570,11 +570,23 @@ class GNNExplainerMeta(Explainer):
         self.eval_result = eval_result
         return eval_result
 
+    def get_summary(self):
+        return self.eval_result
+
     def save_summary(self):
         if self.config.get('summary_path', None) is not None:
             import json
             with open(self.config['summary_path'], 'w') as f:
                 json.dump(self.eval_result, f)
+
+    def save_explanation(self):
+        if self.config.get('explanation_path', None) is not None:
+            import json
+            with open(self.config['explanation_path'], 'w') as f:
+                import os
+                os.makedirs(os.path.dirname(self.config['explanation_path']),
+                            exist_ok=True)
+                json.dump(self.result.to_json(), f)
 
 
 class GNNExplainerOriginalCore(Explainer, nn.Module):

@@ -55,6 +55,24 @@ class NodeExplanation(BaseExplanation):
     def __contains__(self, item):
         return item in self._other_data
 
+    def __len__(self):
+        return len(self._other_data)
+
+    def json_like(self, data):
+        if isinstance(data, torch.Tensor):
+            return data.cpu().tolist()
+        if isinstance(data, list):
+            return [self.json_like(d) for d in data]
+        if isinstance(data, dict):
+            return {k: self.json_like(v) for k, v in data}
+        return data
+
+    def to_dict(self):
+        return self._other_data
+
+    def to_json(self):
+        return self.json_like(self.to_dict())
+
 
 class NodeExplanationCombination(BaseExplanation):
     def __init__(self, node_explanations=None, **kargs):
@@ -96,3 +114,12 @@ class NodeExplanationCombination(BaseExplanation):
             return True
         if item in self.node_explanations[0]:
             return True
+        return False
+
+    def to_dict(self):
+        return {"node_explanations": [ne.to_dict() for ne in self.node_explanations],
+                "control_data": self.control_data}
+
+    def to_json(self):
+        return {"node_explanations": [ne.to_json() for ne in self.node_explanations],
+                "control_data": NodeExplanation().json_like(self.control_data)}
