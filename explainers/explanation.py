@@ -4,8 +4,12 @@ import torch
 def _json2tensor_v1(data):
     if isinstance(data, dict):
         if 'type' in data and data['type'] == 'tensor':
+            if data['is_sparse']:
+                indices = torch.tensor(data['indices'], dtype=torch.long)
+                values = torch.tensor(data['values'])
+                return torch.sparse_coo_tensor(indices, values, data['size'])
             return torch.tensor(data['tensor'])
-        return {k: _json2tensor_v1(v) for k, v in data}
+        return {k: _json2tensor_v1(v) for k, v in data.items()}
     if isinstance(data, list):
         return [_json2tensor_v1(d) for d in data]
 
@@ -16,12 +20,23 @@ def json2tensor(data, version='1'):
 
 def _json_like_v1(data):
     if isinstance(data, torch.Tensor):
+        # consider the tensor is a sparse tensor
+        if data.is_sparse:
+            data = data.coalesce()
+            return {'tensor':
+                {
+                    'indices': data.indices().cpu().tolist(),
+                    'values': data.values().cpu().tolist(),
+                    'size': data.size(),
+                },
+                'type': 'tensor',
+                'is_sparse': True}
         return {'tensor': data.cpu().tolist(),
-                'type': 'tensor', }
+                'type': 'tensor', 'is_sparse': False}
     if isinstance(data, list):
         return [_json_like_v1(d) for d in data]
     if isinstance(data, dict):
-        return {k: _json_like_v1(v) for k, v in data}
+        return {k: _json_like_v1(v) for k, v in data.items()}
     return data
 
 
@@ -36,6 +51,7 @@ json_serializer = {
 json_deserializer = {
     '1': _json2tensor_v1
 }
+
 
 def load_explanation_related_data2object(data):
     if 'type' in data:
@@ -187,6 +203,9 @@ class NodeExplanationCombination(BaseExplanation):
         if item in self.node_explanations[0]:
             return True
         return False
+
+    def __iter__(self):
+        return iter(self.node_explanations)
 
     def to_dict(self):
         return {"node_explanations": [ne.to_dict() for ne in self.node_explanations],
