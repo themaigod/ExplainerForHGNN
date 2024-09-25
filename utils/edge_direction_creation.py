@@ -47,4 +47,4 @@ def process_node_classification_dataset_to_edge_directions(dataset_path,
 
 
 if __name__ == "__main__":
-    process_node_classification_dataset_to_edge_directions("../data/acm", label_path="../data/acm/labels.pkl")
+    process_node_classification_dataset_to_edge_directions("../data/ACM", label_path="../data/acm/labels.pkl")

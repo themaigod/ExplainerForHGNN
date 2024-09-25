@@ -65,5 +65,6 @@
   "neg_weight_characterization_score": 0.5,
   "top_k_for_stability_feature": 0.25,
   "top_k_for_stability_edge": 0.25,
-  "device": 0
+  "device": 0,
+  "explanation_path": "explainer_results/HAN_ACM_GNNExplainerMeta.json"
 }

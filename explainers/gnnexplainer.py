@@ -525,7 +525,7 @@ class GNNExplainerMeta(Explainer):
 
         self.save_summary()
 
-        return result
+        return self.eval_result
 
     def explain_selected_nodes(self, model, selected_nodes):
         self.model = model
@@ -576,6 +576,9 @@ class GNNExplainerMeta(Explainer):
 
     def save_summary(self):
         if self.config.get('summary_path', None) is not None:
+            import os
+            os.makedirs(os.path.dirname(self.config['summary_path']),
+                        exist_ok=True)
             import json
             with open(self.config['summary_path'], 'w') as f:
                 json.dump(self.eval_result, f)

@@ -218,7 +218,6 @@ class ExplainerCore:
             module.to(self.device_string)
         return self
 
-
     @property
     def device_string(self):
         return "cuda:{}".format(self.device) if self.device != "cpu" else self.device
@@ -270,7 +269,6 @@ class Explainer:
         for module in self.registered_modules_and_params.values():
             module.to(self.device_string)
         return self
-
 
     @property
     def device_string(self):
