@@ -1,7 +1,58 @@
 import torch
 
 
-def _json2tensor_v1(data):
+# def _json2tensor_v1(data):
+#     if isinstance(data, dict):
+#         if 'type' in data and data['type'] == 'tensor':
+#             if data['is_sparse']:
+#                 indices = torch.tensor(data['indices'], dtype=torch.long)
+#                 values = torch.tensor(data['values'])
+#                 return torch.sparse_coo_tensor(indices, values, data['size'])
+#             return torch.tensor(data['tensor'])
+#         return {k: _json2tensor_v1(v) for k, v in data.items()}
+#     if isinstance(data, list):
+#         return [_json2tensor_v1(d) for d in data]
+#
+#
+# def json2tensor(data, version='1'):
+#     return json_deserializer[version](data)
+#
+#
+# def _json_like_v1(data):
+#     if isinstance(data, torch.Tensor):
+#         # consider the tensor is a sparse tensor
+#         if data.is_sparse:
+#             data = data.coalesce()
+#             return {'tensor':
+#                 {
+#                     'indices': data.indices().cpu().tolist(),
+#                     'values': data.values().cpu().tolist(),
+#                     'size': data.size(),
+#                 },
+#                 'type': 'tensor',
+#                 'is_sparse': True}
+#         return {'tensor': data.cpu().tolist(),
+#                 'type': 'tensor', 'is_sparse': False}
+#     if isinstance(data, list):
+#         return [_json_like_v1(d) for d in data]
+#     if isinstance(data, dict):
+#         return {k: _json_like_v1(v) for k, v in data.items()}
+#     return data
+#
+#
+# def json_like(data, version='1'):
+#     return json_serializer[version](data)
+#
+#
+# json_serializer = {
+#     '1': _json_like_v1
+# }
+#
+# json_deserializer = {
+#     '1': _json2tensor_v1
+# }
+
+def _packaged2tensor_v1(data):
     if isinstance(data, dict):
         if 'type' in data and data['type'] == 'tensor':
             if data['is_sparse']:
@@ -9,48 +60,49 @@ def _json2tensor_v1(data):
                 values = torch.tensor(data['values'])
                 return torch.sparse_coo_tensor(indices, values, data['size'])
             return torch.tensor(data['tensor'])
-        return {k: _json2tensor_v1(v) for k, v in data.items()}
+        return {k: _packaged2tensor_v1(v) for k, v in data.items()}
     if isinstance(data, list):
-        return [_json2tensor_v1(d) for d in data]
+        return [_packaged2tensor_v1(d) for d in data]
 
 
-def json2tensor(data, version='1'):
-    return json_deserializer[version](data)
+packaged_deserializer = {
+    '1': _packaged2tensor_v1
+}
 
 
-def _json_like_v1(data):
+def packaged2tensor(data, version='1'):
+    return packaged_deserializer[version](data)
+
+
+def _tensor2packaged_v1(data):
     if isinstance(data, torch.Tensor):
         # consider the tensor is a sparse tensor
         if data.is_sparse:
             data = data.coalesce()
             return {'tensor':
                 {
-                    'indices': data.indices().cpu().tolist(),
-                    'values': data.values().cpu().tolist(),
-                    'size': data.size(),
+                    'indices': data.indices().cpu().numpy(),
+                    'values': data.values().cpu().numpy(),
+                    'size': list(data.size()),
                 },
                 'type': 'tensor',
                 'is_sparse': True}
-        return {'tensor': data.cpu().tolist(),
+        return {'tensor': data.cpu().numpy(),
                 'type': 'tensor', 'is_sparse': False}
     if isinstance(data, list):
-        return [_json_like_v1(d) for d in data]
+        return [_tensor2packaged_v1(d) for d in data]
     if isinstance(data, dict):
-        return {k: _json_like_v1(v) for k, v in data.items()}
+        return {k: _tensor2packaged_v1(v) for k, v in data.items()}
     return data
 
 
-def json_like(data, version='1'):
-    return json_serializer[version](data)
-
-
-json_serializer = {
-    '1': _json_like_v1
+packaged_serializer = {
+    '1': _tensor2packaged_v1
 }
 
-json_deserializer = {
-    '1': _json2tensor_v1
-}
+
+def tensor2packaged(data, version='1'):
+    return packaged_serializer[version](data)
 
 
 def load_explanation_related_data2object(data):
@@ -135,31 +187,37 @@ class NodeExplanation(BaseExplanation):
     def __len__(self):
         return len(self._other_data)
 
-    @staticmethod
-    def json_like(data, version='1'):
-        return json_like(data, version)
-
-    @staticmethod
-    def json2tensor(data, version='1'):
-        return json2tensor(data, version)
-
     def to_dict(self):
         return self._other_data
 
-    def to_json(self, version='1'):
-        json_dict = self.json_like(self.to_dict(), version)
-        return {
-            "type": "NodeExplanation",
-            "version": version,
-            "data": json_dict
-        }
+    @staticmethod
+    def packaged_like(data, version='1'):
+        return tensor2packaged(data, version)
+
+    @staticmethod
+    def packaged2tensor(data, version='1'):
+        return packaged2tensor(data, version)
+
+    def to_packaged(self, version='1'):
+        return self.packaged_like(self.to_dict(), version)
 
     @classmethod
-    def from_json(cls, data):
-        if type not in data or data['type'] != 'NodeExplanation':
-            raise ValueError(f"Type {data['type']} not supported")
+    def from_packaged(cls, data):
         result = cls()
-        result._other_data = json2tensor(data['data'], data['version'])
+        result._other_data = packaged2tensor(data)
+        return result
+
+    def save(self, file_path):
+        import pickle as pkl
+        with open(file_path, 'wb') as f:
+            pkl.dump(self, f)
+
+    @classmethod
+    def from_file(cls, file_path):
+        import pickle as pkl
+        with open(file_path, 'rb') as f:
+            data = pkl.load(f)
+            return cls.from_packaged(data)
 
 
 class NodeExplanationCombination(BaseExplanation):
@@ -212,29 +270,19 @@ class NodeExplanationCombination(BaseExplanation):
                 "control_data": self.control_data}
 
     @staticmethod
-    def json_like(data, version='1'):
-        return json_like(data, version)
+    def packaged_like(data, version='1'):
+        return tensor2packaged(data, version)
 
-    def to_json(self, version='1'):
-        # return {"node_explanations": [ne.to_json() for ne in self.node_explanations],
-        #         "control_data": NodeExplanation().json_like(self.control_data)}
-        json_dict = {
-            "node_explanations": [ne.to_json(version) for ne in self.node_explanations],
-            "control_data": self.json_like(self.control_data, version)
-        }
-        return {
-            "type": "NodeExplanationCombination",
-            "version": version,
-            "data": json_dict
-        }
+    @staticmethod
+    def packaged2tensor(data, version='1'):
+        return packaged2tensor(data, version)
 
-    @classmethod
-    def from_json(cls, data):
-        if type not in data or data['type'] != 'NodeExplanationCombination':
-            raise ValueError(f"Type {data['type']} not supported")
-        result = cls()
-        result.node_explanations = [NodeExplanation.from_json(ne) for ne in
-                                    data['data']['node_explanations']]
-        result.control_data = NodeExplanation().json2tensor(
-            data['data']['control_data'], data['version'])
-        return result
+    def save(self, dir_path):
+        import pickle as pkl
+        import os
+        os.makedirs(dir_path, exist_ok=True)
+        with open(os.path.join(dir_path, 'node_explanations_meta.pkl'), 'wb') as f:
+            pkl.dump(self.packaged_like(self.control_data), f)
+
+        for i, ne in enumerate(self.node_explanations):
+            ne.save(os.path.join(dir_path, f'node_explanation_{i}.pkl'))
