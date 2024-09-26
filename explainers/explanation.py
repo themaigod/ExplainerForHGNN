@@ -1,56 +1,6 @@
 import torch
+import os
 
-
-# def _json2tensor_v1(data):
-#     if isinstance(data, dict):
-#         if 'type' in data and data['type'] == 'tensor':
-#             if data['is_sparse']:
-#                 indices = torch.tensor(data['indices'], dtype=torch.long)
-#                 values = torch.tensor(data['values'])
-#                 return torch.sparse_coo_tensor(indices, values, data['size'])
-#             return torch.tensor(data['tensor'])
-#         return {k: _json2tensor_v1(v) for k, v in data.items()}
-#     if isinstance(data, list):
-#         return [_json2tensor_v1(d) for d in data]
-#
-#
-# def json2tensor(data, version='1'):
-#     return json_deserializer[version](data)
-#
-#
-# def _json_like_v1(data):
-#     if isinstance(data, torch.Tensor):
-#         # consider the tensor is a sparse tensor
-#         if data.is_sparse:
-#             data = data.coalesce()
-#             return {'tensor':
-#                 {
-#                     'indices': data.indices().cpu().tolist(),
-#                     'values': data.values().cpu().tolist(),
-#                     'size': data.size(),
-#                 },
-#                 'type': 'tensor',
-#                 'is_sparse': True}
-#         return {'tensor': data.cpu().tolist(),
-#                 'type': 'tensor', 'is_sparse': False}
-#     if isinstance(data, list):
-#         return [_json_like_v1(d) for d in data]
-#     if isinstance(data, dict):
-#         return {k: _json_like_v1(v) for k, v in data.items()}
-#     return data
-#
-#
-# def json_like(data, version='1'):
-#     return json_serializer[version](data)
-#
-#
-# json_serializer = {
-#     '1': _json_like_v1
-# }
-#
-# json_deserializer = {
-#     '1': _json2tensor_v1
-# }
 
 def _packaged2tensor_v1(data):
     if isinstance(data, dict):
@@ -118,16 +68,26 @@ def load_explanation_related_data2object(data):
     return data
 
 
-def save_explanation_related_object2data(obj):
+def save_explanation_related_object2data(obj, dir_path=None, file_name=None):
     if isinstance(obj, NodeExplanation):
-        return obj.to_json()
+        if dir_path is None:
+            dir_path = "./explainer_results"
+        if file_name is None:
+            file_name = f"node_explanation_{obj.node_id}.pkl"
+        obj.save(os.path.join(dir_path, file_name))
+        return
     if isinstance(obj, NodeExplanationCombination):
-        return obj.to_json()
+        obj.save(dir_path)
+        return
     if isinstance(obj, dict):
-        return {k: save_explanation_related_object2data(v) for k, v in obj}
+        for k, v in obj.items():
+            save_explanation_related_object2data(v, os.path.join(dir_path, k))
+        return
     if isinstance(obj, list):
-        return [save_explanation_related_object2data(d) for d in obj]
-    return obj
+        for i, v in enumerate(obj):
+            save_explanation_related_object2data(v, os.path.join(dir_path, str(i)))
+        return
+    raise ValueError(f"Object {obj} is not a valid explanation object")
 
 
 class BaseExplanation:
@@ -279,10 +239,13 @@ class NodeExplanationCombination(BaseExplanation):
 
     def save(self, dir_path):
         import pickle as pkl
-        import os
         os.makedirs(dir_path, exist_ok=True)
         with open(os.path.join(dir_path, 'node_explanations_meta.pkl'), 'wb') as f:
-            pkl.dump(self.packaged_like(self.control_data), f)
+            pkl.dump({
+                'control_data': self.packaged_like(self.control_data),
+                'node_explanations': [ne.node_id for ne in self.node_explanations]
+                },
+                f)
 
         for i, ne in enumerate(self.node_explanations):
-            ne.save(os.path.join(dir_path, f'node_explanation_{i}.pkl'))
+            ne.save(os.path.join(dir_path, f'node_explanation_{ne.node_id}.pkl'))
