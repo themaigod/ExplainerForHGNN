@@ -237,6 +237,22 @@ class GNNExplainerMetaCore(ExplainerCore):
                                                             record[epoch][metric])
                     print(output_str)
 
+        if self.config['record'] and self.config['epochs'] > 0:
+            if epoch not in record:
+                record[epoch] = {}
+                explanation = NodeExplanation()
+                for metric in self.record_metrics:
+                    prepare_explanation_fn_for_node_scores[metric](explanation,
+                                                                   self)
+                    record[epoch][metric] = node_scores[metric](explanation)
+                output_str = 'Node: {} Epoch: {}, Loss: {:.4f}'.format(self.node_id,
+                                                                       epoch,
+                                                                       loss.item())
+                for metric in self.record_metrics:
+                    output_str += ', {}: {:.4f}'.format(metric,
+                                                        record[epoch][metric])
+                print(output_str)
+
         self.record = record
 
     def get_loss(self, output, mask=None):
