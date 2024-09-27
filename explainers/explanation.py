@@ -170,7 +170,7 @@ class NodeExplanation(BaseExplanation):
     def save(self, file_path):
         import pickle as pkl
         with open(file_path, 'wb') as f:
-            pkl.dump(self, f)
+            pkl.dump(self.to_packaged(), f)
 
     @classmethod
     def from_file(cls, file_path):
