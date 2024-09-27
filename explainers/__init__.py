@@ -22,10 +22,16 @@ from .gnnexplainer import GNNExplainerMeta
 from .explainer import Explainer
 
 
-def load_explainer(explainer_name, model_name, dataset_name):
+def load_explainer(explainer_name, model_name, dataset_name, explainer_config=None):
     # load config first
-    with open(f"./explainer_configs/{explainer_name}_{model_name}_{dataset_name}.json", "r") as f:
-        config = json.load(f)
+    if explainer_config is not None:
+        with open(explainer_config, "r") as f:
+            config = json.load(f)
+    else:
+        with open(
+            f"./explainer_configs/{explainer_name}_{model_name}_{dataset_name}.json",
+            "r") as f:
+            config = json.load(f)
 
     if explainer_name == "GNNExplainerMeta":
         return GNNExplainerMeta(config)

@@ -17,10 +17,15 @@ from .han import HAN
 from .model import BaseModel
 
 
-def load_model(model_name, dataset):
+def load_model(model_name, dataset, model_config=None):
     # load config first
-    with open(f"./model_configs/{model_name}_{dataset.dataset_name}.json", "r") as f:
-        config = json.load(f)
+    if model_config is not None:
+        with open(model_config, "r") as f:
+            config = json.load(f)
+    else:
+        with open(f"./model_configs/{model_name}_{dataset.dataset_name}.json",
+                  "r") as f:
+            config = json.load(f)
 
     if model_name == "HAN":
         return HAN(config, dataset)

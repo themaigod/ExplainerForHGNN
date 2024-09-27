@@ -20,7 +20,21 @@ def getargs():
                         help='Random seed. You can try multiple seeds to get overall performance')
     parser.add_argument('--device', type=int, default=0,
                         help='GPU device')
+    parser = getargs_optional(parser)
     return parser.parse_args()
+
+
+def getargs_optional(parser):
+    parser.add_argument('--dataset_config', type=str, default=None,
+                        help='Path to dataset config file')
+    parser.add_argument('--model_config', type=str, default=None,
+                        help='Path to model config file')
+    parser.add_argument('--explainer_config', type=str, default=None,
+                        help='Path to explainer config file')
+    parser.add_argument('--ensure_reproducibility', action='store_true',
+                        default=False,
+                        help='Ensure reproducibility')
+    return parser
 
 
 def set_seed(seed, ensure_reproducibility=False):
@@ -32,15 +46,18 @@ def set_seed(seed, ensure_reproducibility=False):
 
     torch.use_deterministic_algorithms(True)
     import os
-    os.environ[
-        "CUBLAS_WORKSPACE_CONFIG"] = ":4096:8"  # because of the suggestion from https://pytorch.org/docs/stable/notes/randomness.html
+    # because of the suggestion from
+    # https://pytorch.org/docs/stable/notes/randomness.html
+    os.environ["CUBLAS_WORKSPACE_CONFIG"] = ":4096:8"
     if ensure_reproducibility:
         torch.backends.cudnn.benchmark = False
 
 
-def train_model(model_name, dataset_path, device):
-    dataset = load_dataset(dataset_path)
-    model = load_model(model_name, dataset)
+def train_model(model_name, dataset_path, device, dataset_config=None,
+                model_config=None
+                ):
+    dataset = load_dataset(dataset_path, dataset_config)
+    model = load_model(model_name, dataset, model_config)
     model.to(device)
 
     # Train model
@@ -58,9 +75,10 @@ def train_model(model_name, dataset_path, device):
     return model
 
 
-def explain(model, explainer_name, device):
+def explain(model, explainer_name, device, explainer_config=None):
     explainer = load_explainer(explainer_name, model.__class__.__name__,
-                               model.dataset.__class__.__name__)
+                               model.dataset.__class__.__name__,
+                               explainer_config)
     explainer.to(device)
     result = explainer.explain(model)
     print("Explanation Summary:")
@@ -86,9 +104,10 @@ def explain(model, explainer_name, device):
 
 def main():
     args = getargs()
-    set_seed(args.random_seed)
-    model = train_model(args.model, args.dataset, args.device)
-    explainer = explain(model, args.explainer, args.device)
+    set_seed(args.random_seed, args.ensure_reproducibility)
+    model = train_model(args.model, args.dataset, args.device, args.dataset_config,
+                        args.model_config)
+    explainer = explain(model, args.explainer, args.device, args.explainer_config)
     # visualize(explainer)
 
 

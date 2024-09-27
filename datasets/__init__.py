@@ -10,11 +10,15 @@ from .acm import ACM
 from .dataset import NodeClassificationDataset
 
 
-def load_dataset(dataset_path):
+def load_dataset(dataset_path, dataset_config=None):
     dataset_name = dataset_path.split("/")[-1]
 
-    with open(f"./dataset_configs/{dataset_name}.json", "r") as f:
-        config = json.load(f)
+    if dataset_config is not None:
+        with open(dataset_config, "r") as f:
+            config = json.load(f)
+    else:
+        with open(f"./dataset_configs/{dataset_name}.json", "r") as f:
+            config = json.load(f)
 
     try:
         globals()[dataset_name]
