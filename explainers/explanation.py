@@ -103,6 +103,8 @@ class NodeExplanation(BaseExplanation):
             self.__dict__[key] = value
         elif key.startswith("_"):
             super().__setattr__(key, value)
+        elif callable(value):
+            super().__setattr__(key, value)
         else:
             self._other_data[key] = self.safe_tensor_copy(value)
 
@@ -195,6 +197,8 @@ class NodeExplanationCombination(BaseExplanation):
             super().__setattr__(key, value)
         elif key == "node_explanations" or key == "control_data":
             self.__dict__[key] = value
+        elif callable(value):
+            super().__setattr__(key, value)
         else:
             self.control_data[key] = value
 
