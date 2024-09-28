@@ -15,6 +15,7 @@ def _packaged2tensor_v1(data):
         return {k: _packaged2tensor_v1(v) for k, v in data.items()}
     if isinstance(data, list):
         return [_packaged2tensor_v1(d) for d in data]
+    return data
 
 
 packaged_deserializer = {
