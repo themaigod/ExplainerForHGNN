@@ -6,9 +6,11 @@ def _packaged2tensor_v1(data):
     if isinstance(data, dict):
         if 'type' in data and data['type'] == 'tensor':
             if data['is_sparse']:
-                indices = torch.tensor(data['indices'], dtype=torch.long)
-                values = torch.tensor(data['values'])
-                return torch.sparse_coo_tensor(indices, values, data['size'])
+                return torch.sparse_coo_tensor(
+                    indices=torch.tensor(data['tensor']['indices']),
+                    values=torch.tensor(data['tensor']['values']),
+                    size=tuple(data['tensor']['size'])
+                )
             return torch.tensor(data['tensor'])
         return {k: _packaged2tensor_v1(v) for k, v in data.items()}
     if isinstance(data, list):
