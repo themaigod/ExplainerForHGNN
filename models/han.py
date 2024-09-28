@@ -639,6 +639,8 @@ class HAN(BaseModel):
         if path is None:
             path = self.config['weight_path']
 
+        import os
+        os.makedirs(os.path.dirname(path), exist_ok=True)
         torch.save(save_dict, path)
 
     @classmethod
