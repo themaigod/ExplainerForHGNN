@@ -54,6 +54,16 @@ class ACM(NodeClassificationDataset):
             assert num_nodes == shape[
                 0], f"Node features and subgraph {i} have different sizes"
 
+    def to_dict(self):
+        return self.__dict__
+
+    @classmethod
+    def from_dict(cls, data):
+        dataset = cls.__new__(cls)
+        for key, value in data.items():
+            setattr(dataset, key, value)
+        return dataset
+
 # if __name__ == "__main__":
 #     dataset = ACM("../data/acm", {"labels": "../data/acm/labels.pkl", "check_data_size": True})
 #     node_features_shape = dataset.node_features.shape

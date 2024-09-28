@@ -323,10 +323,15 @@ class SemanticAttention(nn.Module):
             nn.Linear(hidden_size, 1, bias=False)
         )
 
-    def forward(self, z):
+    def forward(self, z, attention=False):
         w = self.project(z).mean(0)  # (M, 1)
         beta = torch.softmax(w, dim=0)  # (M, 1)
+        if attention:
+            beta_copy = beta
         beta = beta.expand((z.shape[0],) + beta.shape)  # (N, M, 1)
+
+        if attention:
+            return (beta * z).sum(1), beta_copy
 
         return (beta * z).sum(1)  # (N, D * K)
 
@@ -368,15 +373,32 @@ class HANLayer(nn.Module):
         self.semantic_attention = SemanticAttention(in_size=out_size * layer_num_heads)
         self.num_meta_paths = num_meta_paths
 
-    def forward(self, gs, h):
+    def forward(self, gs, h, gat_attention=False, semantic_attention=False):
         semantic_embeddings = []
+        if not gat_attention:
+            for i, g in enumerate(gs):
+                semantic_embeddings.append(
+                    self.gat_layers[i](g, h).flatten(1))  # (N, D * K)
+            semantic_embeddings = torch.stack(semantic_embeddings,
+                                              dim=1)  # (N, M, D * K)
+        else:
+            gat_attention_weights = []
+            for i, g in enumerate(gs):
+                semantic_embedding, attention = self.gat_layers[i](g, h,
+                                                                   get_attention=True)
+                semantic_embeddings.append(semantic_embedding.flatten(1))
+                gat_attention_weights.append(attention)
+            semantic_embeddings = torch.stack(semantic_embeddings, dim=1)
 
-        for i, g in enumerate(gs):
-            semantic_embeddings.append(
-                self.gat_layers[i](g, h).flatten(1))  # (N, D * K)
-        semantic_embeddings = torch.stack(semantic_embeddings, dim=1)  # (N, M, D * K)
+        if semantic_attention:
+            output, beta = self.semantic_attention(semantic_embeddings, attention=True)
+            if not gat_attention:
+                return output, beta
+            return output, beta, gat_attention_weights
 
-        return self.semantic_attention(semantic_embeddings)  # (N, D * K)
+        if not gat_attention:
+            return self.semantic_attention(semantic_embeddings)  # (N, D * K)
+        return self.semantic_attention(semantic_embeddings), gat_attention_weights
 
 
 class HAN(BaseModel):
@@ -385,6 +407,7 @@ class HAN(BaseModel):
     from `Heterogeneous Graph Attention Network
     <https://arxiv.org/pdf/1903.07293.pdf>`__
     """
+
     def __init__(self, config, dataset):
         super(HAN, self).__init__(config, dataset)
         assert self.dataset.hetero is True, "HAN only supports heterogeneous graph."
@@ -501,7 +524,6 @@ class HAN(BaseModel):
     def custom_loss(self, outputs, mask):
         return F.cross_entropy(outputs[mask], self.labels[mask])
 
-
     def custom_forward(self, handle_fn):
         """
         Custom forward function to allow for custom handling of the input of the model.
@@ -589,3 +611,82 @@ class HAN(BaseModel):
         os.makedirs(os.path.dirname(self.config['summary_path']), exist_ok=True)
         with open(self.config['summary_path'], 'w') as f:
             json.dump(self.summary, f)
+
+    def save(self, path=None, save_dataset_relative=False):
+        save_dict = {
+            'config': self.config,
+            'state_dict': self.state_dict(),
+            'metrics': self.metrics,
+            # 'device': self.device, # no need to save device, we ensure when loading, the device is cpu
+            'meta_paths': self.meta_paths,
+            'num_meta_paths': self.num_meta_paths,
+            'model_name': self.model_name
+        }
+        if getattr(self, 'summary', None) is not None:
+            save_dict['summary'] = self.summary
+        if save_dataset_relative:
+            dataset_dict = self.dataset.to_dict()
+            filter_keys = ['node_features', 'node_types', 'edges', 'labels',
+                           'edge_directions']
+            dataset_dict = {k: dataset_dict[k] for k in dataset_dict if
+                            k not in filter_keys}
+            save_dict['dataset'] = dataset_dict
+            other_keys = ['gs', 'features', 'labels', 'train_mask', 'valid_mask',
+                          'test_mask']
+            for key in other_keys:
+                save_dict[key] = getattr(self, key)
+
+        if path is None:
+            path = self.config['weight_path']
+
+        torch.save(save_dict, path)
+
+    @classmethod
+    def load(cls, path, dataset=None):
+        if dataset is None:
+            read_dataset_relative = True
+        else:
+            read_dataset_relative = False
+
+        load_dict = torch.load(path)
+        config = load_dict['config']
+        if not read_dataset_relative:
+            model = cls(config, dataset)
+            model.load_state_dict(load_dict['state_dict'])
+            model.summary = load_dict.get('summary', None)
+        else:
+            dataset_dict = load_dict['dataset']
+            # not all dataset attributes are saved in the dataset_dict
+            # see filter_keys in the save method
+            # these have been converted to like gs, features, labels,
+            # train_mask, valid_mask, test_mask
+            # This way we can save memory
+            dataset = ACM.from_dict(dataset_dict)
+            model = cls.__new__(cls)
+            model.dataset = dataset
+            model.config = config
+            load_keys = ['metrics', 'meta_paths', 'num_meta_paths',
+                         'model_name', 'gs', 'features', 'labels',
+                         'train_mask', 'valid_mask', 'test_mask']
+            for key in load_keys:
+                setattr(model, key, load_dict[key])
+
+            # set the device to cpu
+            model.device = 'cpu'
+            model.prepare_modules()
+            model.load_state_dict(load_dict['state_dict'])
+            model.summary = load_dict.get('summary', None)
+        return model
+
+    def save_attention(self, path=None, gat_attention=False, semantic_attention=True):
+        if path is None:
+            path = self.config['attention_path']
+        import os
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        attentions = []
+        g, h = self.standard_input()
+        for gnn in self.layers:
+            h, *attention = gnn(g, h, gat_attention=gat_attention,
+                                semantic_attention=semantic_attention)
+            attentions.append(attention)
+        torch.save(attentions, path)

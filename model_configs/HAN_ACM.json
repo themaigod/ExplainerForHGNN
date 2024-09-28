@@ -25,5 +25,7 @@
   "num_epochs": 200,
   "patience": 100,
   "summary_path": "model_summary/HAN_ACM_summary.json",
-  "device": 0
+  "device": 0,
+  "weight_path": "model_weights/HAN_ACM.pth",
+  "attention_path": "model_attention/HAN_ACM_attention.pkl"
 }

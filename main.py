@@ -34,6 +34,15 @@ def getargs_optional(parser):
     parser.add_argument('--ensure_reproducibility', action='store_true',
                         default=False,
                         help='Ensure reproducibility')
+    parser.add_argument('--save_attention', action='store_true',
+                        default=False,
+                        help='Save attention weights')
+    parser.add_argument('--save_model', action='store_true',
+                        default=False,
+                        help='Save model')
+    parser.add_argument('--save_gat_attention', action='store_true',
+                        default=False,
+                        help='Save GAT attention weights')
     return parser
 
 
@@ -107,6 +116,13 @@ def main():
     set_seed(args.random_seed, args.ensure_reproducibility)
     model = train_model(args.model, args.dataset, args.device, args.dataset_config,
                         args.model_config)
+    if args.save_model:
+        model.save()
+    if args.save_attention:
+        if args.save_gat_attention and model.model_name in ['HAN']:
+            model.save_attention(gat_attention=args.save_gat_attention)
+        else:
+            model.save_attention()
     explainer = explain(model, args.explainer, args.device, args.explainer_config)
     # visualize(explainer)
 
