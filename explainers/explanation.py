@@ -248,8 +248,20 @@ class NodeExplanationCombination(BaseExplanation):
             pkl.dump({
                 'control_data': self.packaged_like(self.control_data),
                 'node_explanations': [ne.node_id for ne in self.node_explanations]
-                },
+            },
                 f)
 
         for i, ne in enumerate(self.node_explanations):
             ne.save(os.path.join(dir_path, f'node_explanation_{ne.node_id}.pkl'))
+
+    @classmethod
+    def from_dir(cls, dir_path):
+        import pickle as pkl
+        with open(os.path.join(dir_path, 'node_explanations_meta.pkl'), 'rb') as f:
+            meta = pkl.load(f)
+        node_explanations = []
+        for node_id in meta['node_explanations']:
+            node_explanations.append(
+                NodeExplanation.from_file(
+                    os.path.join(dir_path, f'node_explanation_{node_id}.pkl')))
+        return cls(node_explanations, **cls.packaged2tensor(meta['control_data']))
