@@ -184,6 +184,18 @@ class NodeExplanation(BaseExplanation):
             data = pkl.load(f)
             return cls.from_packaged(data)
 
+    def keys(self):
+        return self._other_data.keys()
+
+    def values(self):
+        return self._other_data.values()
+
+    def items(self):
+        return self._other_data.items()
+
+    def __iter__(self):
+        return iter(self._other_data)
+
 
 class NodeExplanationCombination(BaseExplanation):
     def __init__(self, node_explanations=None, **kargs):

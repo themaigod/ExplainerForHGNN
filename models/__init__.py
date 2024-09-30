@@ -1,11 +1,13 @@
 import json
 
-all = [
+__all__ = [
     "load_model",
     "HAN",
-    "MAGNN",
-    "HGT",
-    "RGCN",
+    # "MAGNN",
+    # "HGT",
+    # "RGCN",
+    "BaseModel",
+    "HAN_GCN"
 ]
 
 from .han import HAN
@@ -15,6 +17,7 @@ from .han import HAN
 # from .hgt import HGT
 # from .rgcn import RGCN
 from .model import BaseModel
+from .han_gcn import HAN_GCN
 
 
 def load_model(model_name, dataset, model_config=None):
@@ -35,5 +38,7 @@ def load_model(model_name, dataset, model_config=None):
     #     return HGT(config, dataset)
     # elif model_name == "RGCN":
     #     return RGCN(config, dataset)
+    elif model_name == "HAN_GCN":
+        return HAN_GCN(config, dataset)
     else:
         return BaseModel(config, dataset)
