@@ -143,10 +143,11 @@ class SemanticAttention(nn.Module):
         )
 
     def forward(self, z, attention=False):
-        w = self.project(z).mean(0)  # (M, 1)
-        beta = torch.softmax(w, dim=0)  # (M, 1)
+        w = self.project(z)  # (M, 1)
         if attention:
-            beta_copy = beta
+            beta_copy = w
+        w = w.mean(0)
+        beta = torch.softmax(w, dim=0)  # (M, 1)
         beta = beta.expand((z.shape[0],) + beta.shape)  # (N, M, 1)
 
         if attention:
