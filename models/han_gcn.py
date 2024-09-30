@@ -245,8 +245,10 @@ class HAN_GCN(BaseModel):
             g = g.tocoo()
             indices = np.vstack((g.row, g.col))
             values = g.data
+            # ensure dtype is float32
             tensor_gs.append(
-                torch.sparse_coo_tensor(indices, values, g.shape).to(self.device)
+                torch.sparse_coo_tensor(indices, values, g.shape, dtype=torch.float32
+                                        ).to(self.device)
                 .coalesce())
         self.gs = tensor_gs
         self.features = torch.tensor(self.dataset.node_features).to(self.device).float()
