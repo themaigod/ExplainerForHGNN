@@ -189,7 +189,7 @@ def main():
         args.model_config,
         times,
         dataset_name=args.dataset,
-        model_name=args.model,
+        model_name=os.path.basename(args.model),
         explainer_name=args.explainer
     )
 
