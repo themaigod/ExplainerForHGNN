@@ -187,7 +187,11 @@ def main():
         args.dataset_config,
         args.explainer_config,
         args.model_config,
-        times)
+        times,
+        dataset_name=args.dataset,
+        model_name=args.model,
+        explainer_name=args.explainer
+    )
 
     if times == 1:
         raise ValueError(
@@ -210,32 +214,38 @@ def main():
     # visualize(explainer)
 
 
-def prepare_configs(dataset_config, explainer_config, model_config, times):
+def prepare_configs(dataset_config, explainer_config, model_config, times, **kwargs):
     dataset_configs, dataset_is_multiple = multiple_times(dataset_config)
     model_configs, model_is_multiple = multiple_times(model_config)
     explainer_configs, explainer_is_multiple = multiple_times(explainer_config)
     if not dataset_is_multiple:
-        dataset_configs = prepare_dataset_configs(dataset_configs, times)
+        dataset_configs = prepare_dataset_configs(dataset_configs, times=times,
+                                                  **kwargs)
     else:
         dataset_configs = iter(dataset_configs)
     if not model_is_multiple:
-        model_configs = prepare_model_configs(model_configs, times)
+        model_configs = prepare_model_configs(model_configs, times, **kwargs)
     else:
         model_configs = iter(model_configs)
     if not explainer_is_multiple:
-        explainer_configs = prepare_explainer_configs(explainer_configs, times)
+        explainer_configs = prepare_explainer_configs(explainer_configs, times,
+                                                      **kwargs)
     else:
         explainer_configs = iter(explainer_configs)
     return dataset_configs, explainer_configs, model_configs
 
 
-def prepare_dataset_configs(dataset_configs, times=None):
+def prepare_dataset_configs(dataset_configs, **kwargs):
     yield dataset_configs[0]
 
 
-def prepare_model_configs(model_configs, times):
+def prepare_model_configs(model_configs, times, **kwargs):
     import json
     path = model_configs[0]
+    if path is None:
+        path = "model_configs/{model_name}_{dataset_name}.json"
+        path = path.format(model_name=kwargs["model_name"],
+                           dataset_name=kwargs["dataset_name"])
     with open(path, "r") as f:
         config = json.load(f)
 
@@ -255,9 +265,14 @@ def prepare_model_configs(model_configs, times):
         yield new_config_path
 
 
-def prepare_explainer_configs(explainer_configs, times):
+def prepare_explainer_configs(explainer_configs, times, **kwargs):
     import json
     path = explainer_configs[0]
+    if path is None:
+        path = "explainer_configs/{explainer_name}_{model_name}_{dataset_name}.json"
+        path = path.format(explainer_name=kwargs["explainer_name"],
+                           model_name=kwargs["model_name"],
+                           dataset_name=kwargs["dataset_name"])
     with open(path, "r") as f:
         config = json.load(f)
 
