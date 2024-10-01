@@ -235,8 +235,9 @@ def prepare_configs(dataset_config, explainer_config, model_config, times, **kwa
     return dataset_configs, explainer_configs, model_configs
 
 
-def prepare_dataset_configs(dataset_configs, **kwargs):
-    yield dataset_configs[0]
+def prepare_dataset_configs(dataset_configs, times, **kwargs):
+    for t in range(1, times + 1):
+        yield dataset_configs[0]
 
 
 def prepare_model_configs(model_configs, times, **kwargs):
