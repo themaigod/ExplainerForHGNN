@@ -152,7 +152,10 @@ class NodeExplanation(BaseExplanation):
     def __len__(self):
         return len(self._other_data)
 
-    def to_dict(self):
+    def to_dict(self, **kwargs):
+        if kwargs.get('filter_keys', None) is not None:
+            return {k: self._other_data[k] for k in kwargs['filter_keys'] if
+                    k in self._other_data}
         return self._other_data
 
     @staticmethod
@@ -163,8 +166,8 @@ class NodeExplanation(BaseExplanation):
     def packaged2tensor(data, version='1'):
         return packaged2tensor(data, version)
 
-    def to_packaged(self, version='1'):
-        return self.packaged_like(self.to_dict(), version)
+    def to_packaged(self, version='1', **kwargs):
+        return self.packaged_like(self.to_dict(**kwargs), version)
 
     @classmethod
     def from_packaged(cls, data):
@@ -172,10 +175,10 @@ class NodeExplanation(BaseExplanation):
         result._other_data = packaged2tensor(data)
         return result
 
-    def save(self, file_path):
+    def save(self, file_path, **kwargs):
         import pickle as pkl
         with open(file_path, 'wb') as f:
-            pkl.dump(self.to_packaged(), f)
+            pkl.dump(self.to_packaged(**kwargs), f)
 
     @classmethod
     def from_file(cls, file_path):
@@ -256,7 +259,7 @@ class NodeExplanationCombination(BaseExplanation):
     def packaged2tensor(data, version='1'):
         return packaged2tensor(data, version)
 
-    def save(self, dir_path):
+    def save(self, dir_path, **kwargs):
         import pickle as pkl
         os.makedirs(dir_path, exist_ok=True)
         with open(os.path.join(dir_path, 'node_explanations_meta.pkl'), 'wb') as f:
@@ -267,7 +270,8 @@ class NodeExplanationCombination(BaseExplanation):
                 f)
 
         for i, ne in enumerate(self.node_explanations):
-            ne.save(os.path.join(dir_path, f'node_explanation_{ne.node_id}.pkl'))
+            ne.save(os.path.join(dir_path, f'node_explanation_{ne.node_id}.pkl'),
+                    **kwargs)
 
     @classmethod
     def from_dir(cls, dir_path):

@@ -599,12 +599,12 @@ class GNNExplainerMeta(Explainer):
             with open(self.config['summary_path'], 'w') as f:
                 json.dump(self.eval_result, f)
 
-    def save_explanation(self):
+    def save_explanation(self, **kwargs):
         if self.config.get('explanation_path', None) is not None:
             import os
             os.makedirs(self.config['explanation_path'],
                         exist_ok=True)
-            self.result.save(self.config['explanation_path'])
+            self.result.save(self.config['explanation_path'], **kwargs)
 
 
 class GNNExplainerOriginalCore(Explainer, nn.Module):

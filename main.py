@@ -40,9 +40,14 @@ def getargs_optional(parser):
     parser.add_argument('--save_model', action='store_true',
                         default=False,
                         help='Save model')
+    parser.add_argument('--minimize_explanation', action='store_true',
+                        default=False,
+                        help='Only save edge mask')
     parser.add_argument('--save_gat_attention', action='store_true',
                         default=False,
                         help='Save GAT attention weights')
+    parser.add_argument('--explanation_keep_keys', type=str, nargs='+', default=[],
+                        help='Keys to keep in explanation')
     return parser
 
 
@@ -84,7 +89,9 @@ def train_model(model_name, dataset_path, device, dataset_config=None,
     return model
 
 
-def explain(model, explainer_name, device, explainer_config=None):
+def explain(model, explainer_name, device, explainer_config=None, minimize=False,
+            filter_keys=None
+            ):
     explainer = load_explainer(explainer_name, model.__class__.__name__,
                                model.dataset.__class__.__name__,
                                explainer_config)
@@ -94,7 +101,12 @@ def explain(model, explainer_name, device, explainer_config=None):
     print("----------------")
     for key, value in result.items():
         print(f"{key}: {value}")
-    explainer.save_explanation()
+    if minimize:
+        explainer.save_explanation(filter_keys=['edge_mask'])
+    elif filter_keys is not None and len(filter_keys) > 0:
+        explainer.save_explanation(filter_keys=filter_keys)
+    else:
+        explainer.save_explanation()
     return explainer
 
 
@@ -123,7 +135,9 @@ def main():
             model.save_attention(gat_attention=args.save_gat_attention)
         else:
             model.save_attention()
-    explainer = explain(model, args.explainer, args.device, args.explainer_config)
+    explainer = explain(model, args.explainer, args.device, args.explainer_config,
+                        minimize=args.minimize_explanation,
+                        filter_keys=args.explanation_keep_keys)
     # visualize(explainer)
 
 
