@@ -208,6 +208,9 @@ def main():
                 model.save_attention(gat_attention=args.save_gat_attention)
             else:
                 model.save_attention()
+        del explainer
+        import gc
+        gc.collect()  # ensure memory of previous explainer is released
         explainer = explain(model, args.explainer, args.device, explainer_configs,
                             minimize=args.minimize_explanation,
                             filter_keys=args.explanation_keep_keys)
