@@ -49,7 +49,7 @@ def getargs_optional(parser):
                         help='Save GAT attention weights')
     parser.add_argument('--explanation_keep_keys', type=str, nargs='+', default=[],
                         help='Keys to keep in explanation')
-    parser.add_argument('--start_time', type=int, default=1,
+    parser.add_argument('--start_time', type=int, default=None,
                         help='Start time for running')
     return parser
 
@@ -131,7 +131,7 @@ def explain(model, explainer_name, device, explainer_configs=None, minimize=Fals
 #     explainer.visualize()
 
 
-def get_times(random_seed, dataset_config, model_config, explainer_config):
+def get_times(random_seed, dataset_config, model_config, explainer_config, **kwargs):
     seed_times = 0
     if len(random_seed) > 1:
         seed_times = len(random_seed)
@@ -169,7 +169,17 @@ def get_times(random_seed, dataset_config, model_config, explainer_config):
         if explainer_times != times and times != 1:
             raise ValueError("Number of explainer times does not match")
         times = explainer_times
-    return times
+
+    # if start_time is None, and seed_times is not 0, then start_time is the first seed
+    if kwargs.get("start_time", None) is None:
+        if seed_times != 0:
+            start_time = random_seed[0]
+        else:
+            start_time = None
+    else:
+        start_time = kwargs.get("start_time", None)
+
+    return times, start_time
 
 
 def multiple_times(name):
@@ -183,8 +193,10 @@ def multiple_times(name):
 
 def main():
     args = getargs()
-    times = get_times(args.random_seed, args.dataset_config, args.model_config,
-                      args.explainer_config)
+    times, start_time = get_times(args.random_seed, args.dataset_config,
+                                  args.model_config,
+                                  args.explainer_config, start_time=args.start_time)
+    args.start_time = start_time
     dataset_configs, explainer_configs, model_configs = prepare_configs(
         args.dataset_config,
         args.explainer_config,
