@@ -49,6 +49,8 @@ def getargs_optional(parser):
                         help='Save GAT attention weights')
     parser.add_argument('--explanation_keep_keys', type=str, nargs='+', default=[],
                         help='Keys to keep in explanation')
+    parser.add_argument('--start_time', type=int, default=1,
+                        help='Start time for running')
     return parser
 
 
@@ -190,7 +192,8 @@ def main():
         times,
         dataset_name=os.path.basename(args.dataset),
         model_name=args.model,
-        explainer_name=args.explainer
+        explainer_name=args.explainer,
+        start_time=args.start_time
     )
 
     if times == 1:
@@ -253,7 +256,12 @@ def prepare_model_configs(model_configs, times, **kwargs):
     with open(path, "r") as f:
         config = json.load(f)
 
-    for t in range(1, times + 1):
+    if kwargs.get("start_time", None) is not None:
+        start_time = kwargs["start_time"]
+    else:
+        start_time = 1
+
+    for t in range(start_time, start_time + times):
         new_config_path = "tmp/model_configs/model_config_{}.json".format(t)
         os.makedirs(os.path.dirname(new_config_path), exist_ok=True)
         new_config = {}
@@ -280,7 +288,12 @@ def prepare_explainer_configs(explainer_configs, times, **kwargs):
     with open(path, "r") as f:
         config = json.load(f)
 
-    for t in range(1, times + 1):
+    if kwargs.get("start_time", None) is not None:
+        start_time = kwargs["start_time"]
+    else:
+        start_time = 1
+
+    for t in range(start_time, start_time + times):
         new_config_path = "tmp/explainer_configs/explainer_config_{}.json".format(t)
         os.makedirs(os.path.dirname(new_config_path), exist_ok=True)
         new_config = {}
