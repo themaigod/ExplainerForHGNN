@@ -21,13 +21,28 @@ python main.py --dataset {dataset_name} --model {model_name} --explainer {explai
 You can do some customization by changing `./dataset_configs/{dataset_name}.json`, `./model_configs/{model_name}_{dataset_name}.json`
 and `./explainer_configs/{explainer_name}_{model_name}_{dataset_name}.json`.
 
+More details can be found in the `python main.py -h`.
+
+### Multi-run
+
+You can run multiple experiments by using the following command:
+
+```bash
+python main_multiple_times.py --dataset {dataset_name} --model {model_name} --explainer {explainer_name} --random_seed {seeds}
+```
+
+Seeds should be a list of integers, e.g., `--random_seed 1 2 3 4 5`.
+
+We also offer some customization settings in `python main_multiple_times.py -h`. For example, you can find setting that
+allows you to run the experiments in different model settings, and then you do not need to give the random seeds.
+
 ## Explainer
 
 Now Dataset available: ACM, DBLP, IMDB
 
 Now model available: HAN (with GAT), HAN (with GCN)
 
-Now explainer available: GNNExpplainer
+Now explainer available: GNNExplainer
 
 ### Plan:
 
