@@ -11,7 +11,9 @@
     ],
     [
       0,
+      1,
       2,
+      1,
       0
     ]
   ],
@@ -24,8 +26,8 @@
   "weight_decay": 0.001,
   "num_epochs": 200,
   "patience": 100,
-  "summary_path": "model_summary/HAN_GCN_ACM_summary.json",
+  "summary_path": "model_summary/HAN_DBLP_summary.json",
   "device": 0,
-  "weight_path": "model_weights/HAN_GCN_ACM.pth",
-  "attention_path": "model_attention/HAN_GCN_ACM_attention.pkl"
+  "weight_path": "model_weights/HAN_DBLP.pth",
+  "attention_path": "model_attention/HAN_DBLP_attention.pkl"
 }
