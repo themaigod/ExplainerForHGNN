@@ -3,10 +3,14 @@ import json
 __all__ = [
     "load_dataset",
     "ACM",
+    "DBLP",
+    "IMDB",
     "NodeClassificationDataset",
 ]
 
 from .acm import ACM
+from .dblp import DBLP
+from .imdb import IMDB
 from .dataset import NodeClassificationDataset
 
 
