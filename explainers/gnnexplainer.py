@@ -1,11 +1,10 @@
+from collections import defaultdict
+
 from .explainer import Explainer, ExplainerCore
 import torch
 import torch.nn.functional as fn
 import torch.nn as nn
 import math
-# from .utils import node_scores, node_dataset_scores, standard_explanation, \
-#     node_score_explanations, node_dataset_score_explanations, \
-#     node_dataset_score_explanations_combined
 from .node_scores import node_scores
 from .node_dataset_scores import node_dataset_scores
 from .prepare_explanation_for_node_scores import standard_explanation
@@ -607,9 +606,368 @@ class GNNExplainerMeta(Explainer):
             self.result.save(self.config['explanation_path'], **kwargs)
 
 
-class GNNExplainerOriginalCore(Explainer, nn.Module):
-    pass
+class GNNExplainerOriginalCore(ExplainerCore):
+    def __init__(self, config):
+        super().__init__(config)
+        self.record_metrics = self.config.get('record_metrics', None)
+        if not self.record_metrics:
+            self.record_metrics = ['mask_density']
+        self.original_explainer = True
+
+    def explain(self, model, **kwargs):
+        self.model = model
+        self.model.eval()
+
+        self.init_params()
+
+        if self.model.dataset.single_graph:
+            self.node_id = kwargs.get('node_id', None)
+            if self.node_id is None:
+                raise ValueError('node_id is required for node-level explanation')
+            return self.node_level_explain()
+        else:
+            return self.graph_level_explain()
+
+    def graph_level_explain(self):
+        self.fit_graph_level()
+        return self.construct_explanation()
+
+    def init_params(self):
+        if self.model.dataset.single_graph:
+            self.init_params_node_level()
+        else:
+            self.init_params_graph_level()
+        self.registered_modules_and_params = {
+            str(index): i for index, i in enumerate(self.get_required_fit_params())
+        }
+        self.to(self.device)
+
+    def init_params_graph_level(self):
+        pass
+
+    def init_params_node_level(self):
+        gs, features = self.model.standard_input()
+        self.total_graph = sum(gs)
+
+        # Initialize the edge mask with proper strategy
+        self.edge_mask = torch.randn(self.total_graph._nnz(), device=self.model.device)
+        std = torch.nn.init.calculate_gain('relu') * math.sqrt(
+            2.0 / (2 * gs[0].shape[0]))
+        if self.config['init_strategy_for_edge'] == 'normal':
+            self.edge_mask = torch.nn.Parameter(
+                torch.randn_like(self.edge_mask, device=self.model.device) * std)
+        elif self.config['init_strategy_for_edge'] == 'const':
+            self.edge_mask = torch.nn.Parameter(
+                torch.ones_like(self.edge_mask, device=self.model.device) * self.config[
+                    'init_const'])
+
+        # Initialize feature mask
+        self.feature_mask = torch.randn(features.shape[1], device=self.model.device)
+        if self.config['init_strategy_for_feature'] == 'normal':
+            with torch.no_grad():
+                self.feature_mask.normal_(1.0, 0.1)
+        elif self.config['init_strategy_for_feature'] == 'const':
+            with torch.no_grad():
+                nn.init.constant_(self.feature_mask, 0.0)
+        self.feature_mask = torch.nn.Parameter(self.feature_mask)
+
+        # Create a dictionary mapping for faster lookup of edge indices
+        total_indices = self.total_graph.coalesce().indices()
+        self.edge_index_map = defaultdict(list)
+        for i in range(total_indices.shape[1]):
+            edge = (total_indices[0, i].item(), total_indices[1, i].item())
+            self.edge_index_map[edge].append(i)
+
+        # Create subgraph masks using the edge index map
+        self.subgraph_masks = []
+        for g in gs:
+            g_indices = g.coalesce().indices()
+            mask_indices = []
+            for i in range(g_indices.shape[1]):
+                edge = (g_indices[0, i].item(), g_indices[1, i].item())
+                if edge in self.edge_index_map:
+                    mask_indices.extend(self.edge_index_map[edge])
+            subgraph_mask = torch.tensor(mask_indices, device=self.model.device,
+                                         dtype=torch.long)
+            self.subgraph_masks.append(subgraph_mask)
+
+    def node_level_explain(self):
+        self.fit_node_level()
+        return self.construct_explanation()
+
+    def construct_explanation(self):
+        explanation = NodeExplanation()
+        explanation = standard_explanation(explanation, self)
+        for metric in self.config['eval_metrics']:
+            prepare_explanation_fn_for_node_dataset_scores[metric](explanation, self)
+        self.explanation = explanation
+        return explanation
+
+    def get_required_fit_params(self):
+        return [self.edge_mask, self.feature_mask]
+
+    def fit(self):
+        if self.model.dataset.single_graph:
+            self.fit_node_level()
+        else:
+            self.fit_graph_level()
+
+    def fit_graph_level(self):
+        pass
+
+    def fit_node_level(self):
+        optimizer = self.build_optimizer()
+        scheduler = self.build_scheduler(optimizer) if self.config.get('opt_scheduler',
+                                                                       None) is not None else None
+
+        self.model.eval()
+        for epoch in range(self.config['epochs']):
+            optimizer.zero_grad()
+            loss = self.forward_node_level()
+            loss.backward()
+            optimizer.step()
+            if scheduler is not None:
+                scheduler.step()
+
+    def forward(self):
+        if self.model.dataset.single_graph:
+            return self.forward_node_level()
+        else:
+            return self.forward_graph_level()
+
+    def forward_graph_level(self):
+        pass
+
+    def forward_node_level(self):
+        handle_fn = self.get_input_handle_fn_node_level()
+        output = self.model.custom_forward(handle_fn)
+        loss = self.get_loss(output, self.node_id)
+        return loss
+
+    def get_loss(self, output, mask=None):
+        normal_loss = self.model.custom_loss(output, mask) if mask else self.model.loss(
+            output)
+
+        edge_mask = fn.sigmoid(self.edge_mask) if self.config[
+                                                      'edge_mask_activation'] == 'sigmoid' else fn.relu(
+            self.edge_mask)
+        edge_mask_size_loss = torch.sum(edge_mask)
+
+        feature_mask = fn.sigmoid(self.feature_mask) if self.config[
+            'feature_mask_use_sigmoid'] else self.feature_mask
+        feature_mask_size_loss = torch.mean(feature_mask)
+
+        edge_mask_entropy_loss = torch.mean(
+            -edge_mask * torch.log(edge_mask + 1e-6) - (1 - edge_mask) * torch.log(
+                1 - edge_mask + 1e-6))
+        feature_mask_entropy_loss = torch.mean(
+            -feature_mask * torch.log(feature_mask + 1e-6) - (
+                1 - feature_mask) * torch.log(1 - feature_mask + 1e-6))
+
+        laplacian_loss_all = 0
+        for g in self.total_graph.coalesce().indices().unbind():
+            indices = g.indices()
+            values = g.values()
+            degree = torch.sparse.sum(g, dim=0).to_dense()
+
+            L = torch.sparse_coo_tensor(g.indices(), -values, g.size())
+            L = L + torch.sparse_coo_tensor(
+                torch.stack([indices[0], indices[0]], dim=0), degree[indices[0]],
+                g.size())
+
+            pred = output.float().view(-1, 1)
+            pred_t = pred.t()
+            laplacian_loss = (pred_t @ (torch.sparse.mm(L, pred))) / g._nnz()
+            laplacian_loss_all += laplacian_loss
+
+        laplacian_loss = laplacian_loss_all / len(
+            self.total_graph.coalesce().indices().unbind())
+
+        loss = (self.config['coff_normal'] * normal_loss +
+                self.config['coff_edge_size'] * edge_mask_size_loss +
+                self.config['coff_feature_size'] * feature_mask_size_loss +
+                self.config['coff_edge_ent'] * edge_mask_entropy_loss +
+                self.config['coff_feature_ent'] * feature_mask_entropy_loss +
+                self.config['coff_laplacian'] * laplacian_loss)
+        return loss
+
+    def get_input_handle_fn(self):
+        if self.model.dataset.single_graph:
+            return self.get_input_handle_fn_node_level()
+        else:
+            return self.get_input_handle_fn_graph_level()
+
+    def get_input_handle_fn_graph_level(self):
+        pass
+
+    def get_input_handle_fn_node_level(self):
+        def handle_fn(model):
+            gs, features = self.model.standard_input()
+            masked_gs_list = []
+            for idx, g in enumerate(gs):
+                sub_edge_mask = self.edge_mask[self.subgraph_masks[idx]]
+                masked_g = g * fn.sigmoid(sub_edge_mask) if self.config[
+                                                                'edge_mask_activation'] == 'sigmoid' else g * fn.relu(
+                    sub_edge_mask)
+                masked_gs_list.append(masked_g)
+            features = features * fn.sigmoid(self.feature_mask) if self.config[
+                'feature_mask_use_sigmoid'] else features * self.feature_mask
+            return masked_gs_list, features
+
+        return handle_fn
+
+    def build_optimizer(self):
+        import torch.optim as optim
+        params = filter(lambda p: p.requires_grad, self.get_required_fit_params())
+        if self.config['opt'] == 'adam':
+            return optim.Adam(params, lr=self.config['opt_lr'],
+                              weight_decay=self.config['opt_wd'])
+        elif self.config['opt'] == 'sgd':
+            return optim.SGD(params, lr=self.config['opt_lr'],
+                             weight_decay=self.config['opt_wd'], momentum=0.95)
+        elif self.config['opt'] == 'rmsprop':
+            return optim.RMSprop(params, lr=self.config['opt_lr'],
+                                 weight_decay=self.config['opt_wd'])
+        elif self.config['opt'] == 'adagrad':
+            return optim.Adagrad(params, lr=self.config['opt_lr'],
+                                 weight_decay=self.config['opt_wd'])
+        else:
+            raise ValueError('Optimizer {} not supported'.format(self.config['opt']))
+
+    def build_scheduler(self, optimizer):
+        import torch.optim as optim
+        if self.config['opt_scheduler'] == 'step':
+            return optim.lr_scheduler.StepLR(optimizer,
+                                             step_size=self.config['opt_decay_step'],
+                                             gamma=self.config['opt_decay_rate'])
+        elif self.config['opt_scheduler'] == 'cos':
+            return optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=self.config[
+                'opt_restart'])
+        else:
+            raise ValueError(
+                'Scheduler {} not supported'.format(self.config['opt_scheduler']))
+
+    def visualize(self):
+        # TODO: Implement visualization logic for edge and feature masks
+        pass
+
+    @property
+    def edge_mask_for_output(self):
+        if self.config['edge_mask_activation'] == 'sigmoid':
+            return [
+                fn.sigmoid(self.edge_mask[self.subgraph_masks[idx]]).clone().detach()
+                for idx in range(len(self.subgraph_masks))]
+        elif self.config['edge_mask_activation'] == 'relu':
+            return [fn.relu(self.edge_mask[self.subgraph_masks[idx]]).clone().detach()
+                    for idx in range(len(self.subgraph_masks))]
+        else:
+            return [self.edge_mask[self.subgraph_masks[idx]].clone().detach() for idx in
+                    range(len(self.subgraph_masks))]
+
+    @property
+    def feature_mask_for_output(self):
+        if self.config['feature_mask_use_sigmoid']:
+            return fn.sigmoid(self.feature_mask).clone().detach()
+        else:
+            return self.feature_mask.clone().detach()
+
+    def get_custom_input_handle_fn(self, masked_gs=None, feature_mask=None):
+        def handle_fn(model):
+            gs, features = self.model.standard_input()
+            if masked_gs is not None:
+                gs = [g.to(self.device) for g in masked_gs]
+            if feature_mask is not None:
+                features = features * feature_mask.to(self.device)
+            return gs, features
+
+        return handle_fn
+
+    @property
+    def total_graph_for_output(self):
+        return self.total_graph
+
+    @property
+    def subgraph_masks_for_output(self):
+        return self.subgraph_masks
 
 
-class GNNExplainerOriginal(Explainer, nn.Module):
-    pass
+class GNNExplainerOriginal(Explainer):
+    def __init__(self, config):
+        super().__init__(config)
+
+    def explain(self, model, **kwargs):
+        self.model = model
+
+        if self.model.dataset.single_graph:
+            return self.node_level_explain()
+        else:
+            return self.graph_level_explain()
+
+    def node_level_explain(self):
+        result = []
+        test_labels = self.model.dataset.labels[2]
+        for idx, label in test_labels:
+            explain_node = GNNExplainerOriginalCore(self.config)
+            explain_node.to(self.device)
+            explanation = explain_node.explain(self.model, node_id=idx)
+            result.append(explanation)
+
+        result = self.construct_explanation(result)
+        self.result = result
+        self.evaluate()
+        self.save_summary()
+
+        return self.eval_result
+
+    def explain_selected_nodes(self, model, selected_nodes):
+        self.model = model
+        result = []
+        test_labels = self.model.dataset.labels[2]
+        for idx, label in test_labels:
+            if idx in selected_nodes:
+                explain_node = GNNExplainerOriginalCore(self.config)
+                explain_node.to(self.device)
+                explanation = explain_node.explain(self.model, node_id=idx)
+                result.append(explanation)
+
+        result = self.construct_explanation(result)
+        self.result = result
+        self.evaluate()
+        self.save_summary()
+
+        return result
+
+    def construct_explanation(self, result):
+        result = NodeExplanationCombination(node_explanations=result)
+        if self.config.get('control_data', None) is not None:
+            result.control_data = self.config['control_data']
+
+        return result
+
+    def graph_level_explain(self):
+        pass
+
+    def evaluate(self):
+        eval_result = {}
+        if self.config.get('eval_metrics', None) is not None:
+            for metric in self.config['eval_metrics']:
+                self.result = prepare_combined_explanation_fn_for_node_dataset_scores[
+                    metric](self.result, self)
+                eval_result[metric] = node_dataset_scores[metric](self.result)
+
+        self.eval_result = eval_result
+        return eval_result
+
+    def save_summary(self):
+        if self.config.get('summary_path', None) is not None:
+            import os
+            os.makedirs(os.path.dirname(self.config['summary_path']), exist_ok=True)
+            import json
+            with open(self.config['summary_path'], 'w') as f:
+                json.dump(self.eval_result, f)
+
+    def save_explanation(self, **kwargs):
+        if self.config.get('explanation_path', None) is not None:
+            import os
+            os.makedirs(self.config['explanation_path'], exist_ok=True)
+            self.result.save(self.config['explanation_path'], **kwargs)
