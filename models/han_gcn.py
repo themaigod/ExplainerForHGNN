@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from .model import BaseModel
 from datasets.dataset import NodeClassificationDataset
-from datasets import ACM
+from datasets import ACM, DBLP, IMDB
 import numpy as np
 import json
 from .utils import node_classification_support_metrics
@@ -230,10 +230,23 @@ class HAN_GCN(BaseModel):
     def dataset_adaptation(self):
         if isinstance(self.dataset, ACM):
             self._dataset_adaptation_acm()
+        elif isinstance(self.dataset, DBLP):
+            self._dataset_adaptation_dblp()
+        elif isinstance(self.dataset, IMDB):
+            self._dataset_adaptation_imdb()
         else:
-            raise NotImplementedError("The dataset is not implemented yet.")
+            self._dataset_adaptation_standard()
 
     def _dataset_adaptation_acm(self):
+        self._dataset_adaptation_standard()
+
+    def _dataset_adaptation_dblp(self):
+        self._dataset_adaptation_standard()
+
+    def _dataset_adaptation_imdb(self):
+        self._dataset_adaptation_standard()
+
+    def _dataset_adaptation_standard(self):
         # read the metapaths used
         self.meta_paths = self.config['meta_paths']
         gs = [self._edges_to_metapath_adjacency(meta_path) for meta_path in
