@@ -51,7 +51,7 @@ def getargs_optional(parser):
                         help='Keys to keep in explanation')
     parser.add_argument('--start_time', type=int, default=None,
                         help='Start time for running')
-    parser.add_argument('--explain_max_nodes', type=int, default=100,
+    parser.add_argument('--explain_max_nodes', type=int, default=None,
                         help='Max number of nodes to explain')
     return parser
 
