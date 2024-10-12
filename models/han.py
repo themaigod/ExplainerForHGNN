@@ -322,13 +322,14 @@ class SemanticAttention(nn.Module):
             nn.Tanh(),
             nn.Linear(hidden_size, 1, bias=False)
         )
+        self.softmax = nn.Softmax(dim=0)
 
     def forward(self, z, attention=False):
         w = self.project(z)  # (M, 1)
         if attention:
             beta_copy = w
         w = w.mean(0)
-        beta = torch.softmax(w, dim=0)  # (M, 1)
+        beta = self.softmax(w)
         beta = beta.expand((z.shape[0],) + beta.shape)  # (N, M, 1)
 
         if attention:
@@ -557,7 +558,6 @@ class HAN(BaseModel):
     def fit(self):
         optimizer = torch.optim.Adam(self.parameters(), lr=self.config['lr'],
                                      weight_decay=self.config['weight_decay'])
-        criterion = nn.CrossEntropyLoss()
 
         early_stopping = 0
         loss_compared = 1e10
@@ -565,7 +565,7 @@ class HAN(BaseModel):
         for epoch in range(self.config['num_epochs']):
             self.train()
             logits = self.forward()
-            loss = criterion(logits[self.train_mask], self.labels[self.train_mask])
+            loss = self.loss(logits)
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
@@ -575,7 +575,7 @@ class HAN(BaseModel):
             # evaluate by validation set
             self.eval()
             logits = self.forward()
-            loss = criterion(logits[self.valid_mask], self.labels[self.valid_mask])
+            loss = self.custom_loss(logits, self.valid_mask)
 
             metrics, results = self.evaluate(logits, self.labels, self.valid_mask)
 
@@ -706,3 +706,26 @@ class HAN(BaseModel):
                                 semantic_attention=semantic_attention)
             attentions.append(attention)
         torch.save(attentions, path)
+
+    def custom_forward_meta_path_mask(self, input_handle_fn, meta_path_weight_handle_fn
+                                      ):
+        # we need to use hook to process the meta path weight
+        # for han, meta path weight is the attention weights (output of the softmax layer
+        # of the semantic attention)
+        # meta_path_weight_handle_fn: give the meta path weight, return the modified weight
+
+        def forward_hook(module, input, output):
+            meta_path_weight = meta_path_weight_handle_fn(output)
+            return meta_path_weight
+
+        hooks = []
+        for gnn in self.layers:
+            hooks.append(
+                gnn.semantic_attention.softmax.register_forward_hook(forward_hook))
+
+        output = self.custom_forward(input_handle_fn)
+
+        for hook in hooks:
+            hook.remove()
+
+        return output

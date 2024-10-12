@@ -137,7 +137,6 @@ class GNNExplainerMetaCore(ExplainerCore):
                         torch.randn_like(em, device=self.model.device) * std))
             self.edge_mask = edge_mask_after_init
 
-
         elif self.config['init_strategy_for_edge'] == 'const':
             edge_mask_after_init = []
             for em in self.edge_mask:
@@ -147,8 +146,6 @@ class GNNExplainerMetaCore(ExplainerCore):
                             'init_const']))
             self.edge_mask = edge_mask_after_init
 
-        self.pram_feature_mask = nn.ParameterList(self.edge_mask)
-
         if self.config['use_mask_bias']:
             self.edge_mask_bias = []
             for g in gs:
@@ -156,8 +153,6 @@ class GNNExplainerMetaCore(ExplainerCore):
                     torch.nn.Parameter(torch.zeros(g._nnz(), device=self.model.device)))
                 for em in self.edge_mask_bias:
                     torch.nn.init.constant_(em, 0.0)
-
-            self.pram_feature_mask_bias = nn.ParameterList(self.edge_mask_bias)
         else:
             self.edge_mask_bias = None
 
@@ -169,8 +164,7 @@ class GNNExplainerMetaCore(ExplainerCore):
         elif self.config['init_strategy_for_feature'] == 'const':
             with torch.no_grad():
                 nn.init.constant_(mask, 0.0)
-        self.pram_feature_mask = torch.nn.Parameter(mask)
-        self.feature_mask = [self.pram_feature_mask]
+        self.feature_mask = [torch.nn.Parameter(mask)]
 
     def node_level_explain(self):
         self.fit()
@@ -765,7 +759,8 @@ class GNNExplainerOriginalCore(ExplainerCore):
                 1 - feature_mask) * torch.log(1 - feature_mask + 1e-6))
 
         laplacian_loss_all = 0
-        for g in self.total_graph.coalesce().indices().unbind():
+        for g in self.masked['masked_gs']:
+            g = g.coalesce()
             indices = g.indices()
             values = g.values()
             degree = torch.sparse.sum(g, dim=0).to_dense()
@@ -801,6 +796,7 @@ class GNNExplainerOriginalCore(ExplainerCore):
         pass
 
     def get_input_handle_fn_node_level(self):
+        self.masked = {}
         def handle_fn(model):
             gs, features = self.model.standard_input()
             masked_gs_list = []
@@ -812,6 +808,8 @@ class GNNExplainerOriginalCore(ExplainerCore):
                 masked_gs_list.append(masked_g)
             features = features * fn.sigmoid(self.feature_mask) if self.config[
                 'feature_mask_use_sigmoid'] else features * self.feature_mask
+            self.masked['masked_gs'] = masked_gs_list
+            self.masked['masked_features'] = features
             return masked_gs_list, features
 
         return handle_fn

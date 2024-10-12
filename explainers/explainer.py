@@ -6,6 +6,7 @@ class ExplainerCore:
 
         self.device = "cpu"
         self.registered_modules_and_params = {}
+        self.original_explainer = False
 
     def init_params(self):
         """Initialize parameters for the explainer."""
