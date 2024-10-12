@@ -2,6 +2,7 @@ from .dataset import NodeClassificationDataset
 import pickle
 import numpy as np
 import json
+import random
 
 
 class ACM(NodeClassificationDataset):
@@ -17,6 +18,9 @@ class ACM(NodeClassificationDataset):
                                len(set(i[1] for i in self.labels[1])),
                                len(set(i[1] for i in self.labels[2])))
         self.num_features = self.node_features.shape[1]
+
+        if self.config.get("test_label_shuffle", False):
+            self.labels[2] = random.sample(self.labels[2], len(self.labels[2]))
 
     def load_data(self):
         with open(self.node_features_path, 'rb') as f:
