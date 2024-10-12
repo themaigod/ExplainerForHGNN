@@ -31,10 +31,12 @@ class GNNExplainerMetaCore(ExplainerCore):
         self.model = model
         self.model.eval()
 
+        if self.model.dataset.single_graph:
+            self.node_id = kwargs.get('node_id', None)
+
         self.init_params()
 
         if self.model.dataset.single_graph:
-            self.node_id = kwargs.get('node_id', None)
             if self.node_id is None:
                 raise ValueError('node_id is required for node-level explanation')
             return self.node_level_explain()
@@ -62,7 +64,7 @@ class GNNExplainerMetaCore(ExplainerCore):
         Extract the neighbors of the node to be explained
         :return:
         """
-        if self.config.get('extract_neighbors', False):
+        if not self.config.get('extract_neighbors', False):
             gs, features = self.model.standard_input()
             self.neighbor_input = {"gs": gs, "features": features}
             return gs, features
