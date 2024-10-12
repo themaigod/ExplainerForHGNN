@@ -48,6 +48,8 @@ def getargs_optional(parser):
                         help='Save GAT attention weights')
     parser.add_argument('--explanation_keep_keys', type=str, nargs='+', default=[],
                         help='Keys to keep in explanation')
+    parser.add_argument('--explain_max_nodes', type=int, default=None,
+                        help='Maximum number of nodes to explain')
     return parser
 
 
@@ -90,13 +92,14 @@ def train_model(model_name, dataset_path, device, dataset_config=None,
 
 
 def explain(model, explainer_name, device, explainer_config=None, minimize=False,
-            filter_keys=None
+            filter_keys=None,
+            max_nodes=None
             ):
     explainer = load_explainer(explainer_name, model.__class__.__name__,
                                model.dataset.__class__.__name__,
                                explainer_config)
     explainer.to(device)
-    result = explainer.explain(model)
+    result = explainer.explain(model, max_nodes=max_nodes)
     print("Explanation Summary:")
     print("----------------")
     for key, value in result.items():
@@ -137,7 +140,8 @@ def main():
             model.save_attention()
     explainer = explain(model, args.explainer, args.device, args.explainer_config,
                         minimize=args.minimize_explanation,
-                        filter_keys=args.explanation_keep_keys)
+                        filter_keys=args.explanation_keep_keys,
+                        max_nodes=args.explain_max_nodes)
     # visualize(explainer)
 
 

@@ -509,14 +509,19 @@ class GNNExplainerMeta(Explainer):
         self.model = model
 
         if self.model.dataset.single_graph:
-            return self.node_level_explain()
+            return self.node_level_explain(**kwargs)
         else:
-            return self.graph_level_explain()
+            return self.graph_level_explain(**kwargs)
 
-    def node_level_explain(self):
+    def node_level_explain(self, **kwargs):
 
         result = []
         test_labels = self.model.dataset.labels[2]
+
+        if kwargs.get('max_nodes', None) is not None \
+            and kwargs.get('max_nodes') < len(test_labels):
+            test_labels = test_labels[:kwargs.get('max_nodes')]
+
         for idx, label in test_labels:
             explain_node = GNNExplainerMetaCore(self.config)
             explain_node.to(self.device)
@@ -565,7 +570,7 @@ class GNNExplainerMeta(Explainer):
 
         return result
 
-    def graph_level_explain(self):
+    def graph_level_explain(self, **kwargs):
         pass
 
     def evaluate(self):
