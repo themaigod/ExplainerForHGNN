@@ -1,11 +1,9 @@
 from .explainer import Explainer, ExplainerCore
 from .explanation import NodeExplanationCombination, NodeExplanation
-from .node_scores import node_scores
 from .node_dataset_scores import node_dataset_scores
 from .prepare_explanation_for_node_scores import standard_explanation
 from .prepare_combined_explanation_for_node_dataset_scores import \
     prepare_combined_explanation_fn_for_node_dataset_scores
-from .prepare_explanation_for_node_scores import prepare_explanation_fn_for_node_scores
 from .prepare_explanation_for_node_dataset_scores import \
     prepare_explanation_fn_for_node_dataset_scores
 import torch
@@ -72,16 +70,21 @@ class GradExplainerCore(ExplainerCore):
         pass
 
     def fit_node_level(self):
-        gs, features = self.model.standard_input()
-        features.requires_grad = True
         loss = self.forward()
         loss.backward()
-        features_weight = features.grad
+        features = self.temp_features
+        if self.model.support_multi_features:
+            features_weight = [i.grad for i in features]
+        else:
+            features_weight = features.grad
         # normalize the weight
-        features_weight = torch.sqrt(torch.sum(features_weight ** 2, dim=1))
+        if self.model.support_multi_features:
+            features_weight = [i / torch.sqrt(torch.sum(i ** 2, dim=1, keepdim=True)) for i in features_weight]
+        else:
+            features_weight = torch.sqrt(torch.sum(features_weight ** 2, dim=1))
         self.node_mask = features_weight
 
-        self.edge_mask = self.convert_node_mask_to_edge_mask(self.node_mask, gs)
+        self.edge_mask = self.convert_node_mask_to_edge_mask(self.node_mask, self.temp_gs)
 
     def convert_node_mask_to_edge_mask(self, node_mask, gs):
         edge_mask = []
@@ -91,9 +94,12 @@ class GradExplainerCore(ExplainerCore):
 
     @staticmethod
     def convert_node_mask_to_edge_mask_single(node_mask, g):
-        edge_mask = torch.zeros(g.num_edges())
-        for i, e in enumerate(g.edges()):
-            edge_mask[i] = node_mask[e[0]] * node_mask[e[1]]
+        g = g.coleasce()
+        indices = g.indices()
+        values = g.values()
+        edge_mask = torch.zeros_like(values)
+        for i in range(len(edge_mask)):
+            edge_mask[i] = node_mask[indices[0][i]] * node_mask[indices[1][i]]
         return edge_mask
 
     def get_loss(self, output, mask=None):
@@ -123,7 +129,28 @@ class GradExplainerCore(ExplainerCore):
         pass
 
     def get_input_handle_fn_node_level(self):
-        pass
+
+        if self.model.support_multi_features:
+            def handle_fn(model):
+                gs, features = model.standard_input()
+                features_list = []
+                for i in range(len(gs)):
+                    features_list.append(features.clone().detach())
+                for i in features_list:
+                    i.requires_grad = True
+                self.temp_features = features_list
+                self.temp_gs = gs
+                return gs, features_list
+
+        else:
+            def handle_fn(model):
+                gs, features = model.standard_input()
+                features.requires_grad = True
+                self.temp_features = features
+                self.temp_gs = gs
+                return gs, features
+
+        return handle_fn
 
     def forward(self):
         if self.model.dataset.single_graph:
@@ -135,7 +162,7 @@ class GradExplainerCore(ExplainerCore):
         pass
 
     def forward_node_level(self):
-        logits = self.model.forward()
+        logits = self.model.custom_forward(self.get_input_handle_fn())
         if self.config.get('use_label', False):
             loss = self.get_loss(logits, self.model.labels[self.node_id])
         else:
@@ -154,6 +181,8 @@ class GradExplainerCore(ExplainerCore):
 
     @property
     def edge_mask_for_output(self):
+        if 'edge_mask' not in self.__dict__:
+            return None
         return self.edge_mask
 
     @property
@@ -178,6 +207,12 @@ class GradExplainerCore(ExplainerCore):
             return gs, features
 
         return handle_fn
+
+    @property
+    def node_mask_for_output(self):
+        if 'node_mask' not in self.__dict__:
+            return None
+        return self.node_mask
 
 
 class GradExplainer(Explainer):

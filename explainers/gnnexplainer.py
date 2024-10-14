@@ -469,6 +469,8 @@ class GNNExplainerMetaCore(ExplainerCore):
 
     @property
     def edge_mask_for_output(self):
+        if 'edge_mask' not in self.__dict__:
+            return None
         if self.config['edge_mask_activation'] == 'sigmoid':
             return [fn.sigmoid(em).clone().detach() for em in self.edge_mask]
         elif self.config['edge_mask_activation'] == 'relu':
@@ -478,6 +480,8 @@ class GNNExplainerMetaCore(ExplainerCore):
 
     @property
     def feature_mask_for_output(self):
+        if 'feature_mask' not in self.__dict__:
+            return None
         if self.config['feature_mask_use_sigmoid']:
             return fn.sigmoid(self.feature_mask[0]).clone().detach()
         else:
@@ -858,6 +862,8 @@ class GNNExplainerOriginalCore(ExplainerCore):
 
     @property
     def edge_mask_for_output(self):
+        if 'edge_mask' not in self.__dict__:
+            return None
         if self.config['edge_mask_activation'] == 'sigmoid':
             return [
                 fn.sigmoid(self.edge_mask[self.subgraph_masks[idx]]).clone().detach()
@@ -871,6 +877,8 @@ class GNNExplainerOriginalCore(ExplainerCore):
 
     @property
     def feature_mask_for_output(self):
+        if 'feature_mask' not in self.__dict__:
+            return None
         if self.config['feature_mask_use_sigmoid']:
             return fn.sigmoid(self.feature_mask).clone().detach()
         else:
@@ -889,10 +897,14 @@ class GNNExplainerOriginalCore(ExplainerCore):
 
     @property
     def total_graph_for_output(self):
+        if 'total_graph' not in self.__dict__:
+            return None
         return self.total_graph
 
     @property
     def subgraph_masks_for_output(self):
+        if 'subgraph_masks' not in self.__dict__:
+            return None
         return self.subgraph_masks
 
 
