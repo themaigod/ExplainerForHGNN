@@ -563,7 +563,7 @@ class GNNExplainerMeta(Explainer):
 
         self.save_summary()
 
-        return result
+        return self.eval_result
 
     def construct_explanation(self, result):
         result = NodeExplanationCombination(node_explanations=result)
