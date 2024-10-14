@@ -379,15 +379,23 @@ class HANLayer(nn.Module):
         semantic_embeddings = []
         if not gat_attention:
             for i, g in enumerate(gs):
-                semantic_embeddings.append(
-                    self.gat_layers[i](g, h).flatten(1))  # (N, D * K)
+                if isinstance(h, tuple) or isinstance(h, list):
+                    semantic_embeddings.append(
+                        self.gat_layers[i](g, h[i]).flatten(1))
+                else:
+                    semantic_embeddings.append(
+                        self.gat_layers[i](g, h).flatten(1))  # (N, D * K)
             semantic_embeddings = torch.stack(semantic_embeddings,
                                               dim=1)  # (N, M, D * K)
         else:
             gat_attention_weights = []
             for i, g in enumerate(gs):
-                semantic_embedding, attention = self.gat_layers[i](g, h,
-                                                                   get_attention=True)
+                if isinstance(h, tuple) or isinstance(h, list):
+                    semantic_embedding, attention = self.gat_layers[i](g, h[i],
+                                                                       get_attention=True)
+                else:
+                    semantic_embedding, attention = self.gat_layers[i](g, h,
+                                                                       get_attention=True)
                 semantic_embeddings.append(semantic_embedding.flatten(1))
                 gat_attention_weights.append(attention)
             semantic_embeddings = torch.stack(semantic_embeddings, dim=1)
@@ -419,6 +427,7 @@ class HAN(BaseModel):
         self.dataset_adaptation()
         self.prepare_modules()
         self.to(self.device)
+        self.support_multi_features = True
 
     def prepare_modules(self):
         self.layers = nn.ModuleList()

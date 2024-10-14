@@ -8,6 +8,7 @@ from .prepare_combined_explanation_for_node_dataset_scores import \
 from .prepare_explanation_for_node_scores import prepare_explanation_fn_for_node_scores
 from .prepare_explanation_for_node_dataset_scores import \
     prepare_explanation_fn_for_node_dataset_scores
+import torch
 
 
 class GradExplainerCore(ExplainerCore):
@@ -52,6 +53,7 @@ class GradExplainerCore(ExplainerCore):
     def construct_explanation(self):
         explanation = NodeExplanation()
         explanation = standard_explanation(explanation, self)
+        explanation.node_mask = self.node_mask
         for metric in self.config['eval_metrics']:
             prepare_explanation_fn_for_node_dataset_scores[metric](explanation, self)
         self.explanation = explanation
@@ -70,8 +72,29 @@ class GradExplainerCore(ExplainerCore):
         pass
 
     def fit_node_level(self):
-        # !TODO: Implement this method
-        pass
+        gs, features = self.model.standard_input()
+        features.requires_grad = True
+        loss = self.forward()
+        loss.backward()
+        features_weight = features.grad
+        # normalize the weight
+        features_weight = torch.sqrt(torch.sum(features_weight ** 2, dim=1))
+        self.node_mask = features_weight
+
+        self.edge_mask = self.convert_node_mask_to_edge_mask(self.node_mask, gs)
+
+    def convert_node_mask_to_edge_mask(self, node_mask, gs):
+        edge_mask = []
+        for g in gs:
+            edge_mask.append(self.convert_node_mask_to_edge_mask_single(node_mask, g))
+        return edge_mask
+
+    @staticmethod
+    def convert_node_mask_to_edge_mask_single(node_mask, g):
+        edge_mask = torch.zeros(g.num_edges())
+        for i, e in enumerate(g.edges()):
+            edge_mask[i] = node_mask[e[0]] * node_mask[e[1]]
+        return edge_mask
 
     def get_loss(self, output, mask=None):
         if self.model.dataset.single_graph:
@@ -83,8 +106,12 @@ class GradExplainerCore(ExplainerCore):
         pass
 
     def get_loss_node_level(self, output, mask=None):
-        # !TODO: Implement this method
-        pass
+        if mask is not None:
+            class_id = mask
+        else:
+            class_id = output.argmax()
+        loss = self.model.get_loss(output, class_id)
+        return loss
 
     def get_input_handle_fn(self):
         if self.model.dataset.single_graph:
@@ -108,8 +135,12 @@ class GradExplainerCore(ExplainerCore):
         pass
 
     def forward_node_level(self):
-        # !TODO: Implement this method
-        pass
+        logits = self.model.forward()
+        if self.config.get('use_label', False):
+            loss = self.get_loss(logits, self.model.labels[self.node_id])
+        else:
+            loss = self.get_loss(logits)
+        return loss
 
     def build_optimizer(self):
         pass
@@ -123,17 +154,30 @@ class GradExplainerCore(ExplainerCore):
 
     @property
     def edge_mask_for_output(self):
-        # !TODO: Implement this method
-        pass
+        return self.edge_mask
 
     @property
     def feature_mask_for_output(self):
-        # !TODO: Implement this method
-        pass
+        return None
 
     def get_custom_input_handle_fn(self, masked_gs=None, feature_mask=None):
-        # !TODO: Implement this method
-        pass
+        """
+        Get the custom input handle function for the model.
+        :return:
+        """
+
+        def handle_fn(model):
+            if model is None:
+                model = self.model
+            gs, features = model.standard_input()
+            if masked_gs is not None:
+                gs = [i.to(self.device_string) for i in masked_gs]
+            if feature_mask is not None:
+                feature_mask_device = feature_mask.to(self.device_string)
+                features = features * feature_mask_device
+            return gs, features
+
+        return handle_fn
 
 
 class GradExplainer(Explainer):

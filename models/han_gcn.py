@@ -198,7 +198,11 @@ class HANLayer(nn.Module):
     def forward(self, gs, h, semantic_attention=False):
         semantic_embeddings = []
 
+        h_old = h
+
         for i, g in enumerate(gs):
+            if isinstance(h, tuple) or isinstance(h, list):
+                h = h_old[i]
             if self.dropout is not None:
                 h = self.dropout(h)
             semantic_embeddings.append(
@@ -226,6 +230,7 @@ class HAN_GCN(BaseModel):
         self.dataset_adaptation()
         self.prepare_modules()
         self.to(self.device)
+        self.support_multi_features = True
 
     def dataset_adaptation(self):
         if isinstance(self.dataset, ACM):

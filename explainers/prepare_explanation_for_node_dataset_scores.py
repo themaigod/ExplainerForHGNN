@@ -91,6 +91,9 @@ def get_masked_gs_hard_core(gs, edge_mask_hard):
 
 
 def get_feature_mask_hard(explainer, opposite=False):
+    if explainer.feature_mask_for_output is None:
+        return None
+
     if explainer.config['feature_mask_hard_method'] == 'threshold':
         feature_mask = explainer.feature_mask_for_output
         threshold = explainer.config['feature_mask_threshold']

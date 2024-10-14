@@ -14,6 +14,7 @@ class BaseModel(torch.nn.Module):
         # single_graph is False if the model is for graph classification, etc.
         self.single_graph = getattr(dataset, "single_graph", None)  # bool
         self.device = config.get("device", "cpu")
+        self.support_multi_features = False
 
     def standard_input(self):
         """
