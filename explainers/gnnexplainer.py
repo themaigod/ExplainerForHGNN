@@ -652,7 +652,15 @@ class GNNExplainerOriginalCore(ExplainerCore):
 
     def init_params_node_level(self):
         gs, features = self.model.standard_input()
-        self.total_graph = sum(gs)
+
+        total_graph = None
+        for g in gs:
+            if total_graph is None:
+                total_graph = g
+            else:
+                total_graph = total_graph + g
+
+        self.total_graph = total_graph
 
         # Initialize the edge mask with proper strategy
         self.edge_mask = torch.randn(self.total_graph._nnz(), device=self.model.device)
