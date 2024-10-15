@@ -2,32 +2,10 @@
   "record_metrics": [
     "mask_density"
   ],
-  "extract_neighbors": false,
-  "n_hop": 3,
-  "init_strategy_for_edge": "normal",
-  "use_mask_bias": false,
-  "init_strategy_for_feature": "const",
-  "opt_scheduler": null,
-  "opt": "adam",
-  "edge_mask_activation": "sigmoid",
-  "epochs": 100,
-  "record": true,
-  "record_step": 1,
-  "feature_mask_use_sigmoid": true,
-  "coff_normal": 1.0,
-  "coff_edge_size": 0.005,
-  "coff_feature_size": 1.0,
-  "coff_edge_ent": 1.0,
-  "coff_feature_ent": 0.1,
-  "coff_laplacian": 1.0,
   "mask_features": true,
   "feature_mask_marginalize": false,
   "apply_mata_mask": true,
-  "opt_lr": 0.1,
-  "opt_wd": 0.0,
-  "opt_decay_rate": null,
-  "opt_decay_step": null,
-  "opt_restart": null,
+  "use_label": false,
   "eval_metrics": [
     "fidelity_neg",
     "fidelity_pos",
@@ -36,11 +14,9 @@
     "Micro-F1",
     "roc_auc_score"
   ],
-  "summary_path": "explainer_summary/HAN_ACM_GNNExplainerMeta_summary.json",
+  "summary_path": "explainer_summary/HAN_GCN_IMDB_GradExplainerMeta_summary.json",
   "edge_mask_hard_method": "auto_threshold",
   "threshold_percentage_edge": 0.5,
-  "feature_mask_hard_method": "auto_threshold",
-  "threshold_percentage_feature": 0.5,
   "threshold_percentage_auc": [
     0.0,
     0.1,
@@ -66,5 +42,5 @@
   "top_k_for_stability_feature": 0.25,
   "top_k_for_stability_edge": 0.25,
   "device": 0,
-  "explanation_path": "explainer_results/HAN_ACM_GNNExplainerMeta"
+  "explanation_path": "explainer_results/HAN_GCN_IMDB_GradExplainerMeta"
 }

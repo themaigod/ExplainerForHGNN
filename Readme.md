@@ -8,7 +8,16 @@ We do fair comparison between different models and evaluate their performance on
 ## Requirements
 
 - Python 3.10
-- Pytorch
+- Pytorch (developed with 2.3.0)
+- Cuda 11 or higher (if you want to use GPU. Not sure about the lower version of Cuda)
+- Numpy
+
+Note: Pytorch seems to do a lot of changes in the sparse tensor (Compared to the previous version), and give 
+a better support for the sparse tensor, which we rely on. So the elder version of Pytorch may not work with this code.
+
+Note: Currently, we not rely on other common libraries like `torch_geometric`, `dgl`, etc. We hope to make the code more
+compatible with different environments. But if it is tough to implement the model without these libraries in the future,
+we will use them.
 
 ## Run the code
 
@@ -20,6 +29,10 @@ python main.py --dataset {dataset_name} --model {model_name} --explainer {explai
 
 You can do some customization by changing `./dataset_configs/{dataset_name}.json`, `./model_configs/{model_name}_{dataset_name}.json`
 and `./explainer_configs/{explainer_name}_{model_name}_{dataset_name}.json`.
+
+Note: Although we recommend using `./explainer_configs/{explainer_name}_{model_name}_{dataset_name}.json` to set
+the details for different models and datasets, you can just use `./explainer_configs/{explainer_name}.json` to set the
+new model and dataset. You can just provide the `./explainer_configs/{explainer_name}.json` if you design a new explainer.
 
 More details can be found in the `python main.py -h`.
 

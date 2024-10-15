@@ -1,4 +1,4 @@
-### Example Configuration:
+### Example GNNExplainer Configuration:
 
 ```json
 {
@@ -9,7 +9,7 @@
   "n_hop": 3,
   "init_strategy_for_edge": "normal",
   "use_mask_bias": false,
-  "init_strategy_for_feature": "constant",
+  "init_strategy_for_feature": "const",
   "edge_mask_threshold": 0.5,
   "feature_mask_threshold": 0.5,
   "opt_scheduler": null,
@@ -44,7 +44,7 @@
 }
 ```
 
-### Configuration Keys (with descriptions):
+### GNNExplainer Configuration Keys (with descriptions):
 
 1. **Explainer Parameters:**
 
@@ -61,9 +61,12 @@
    - **`init_strategy_for_edge`**: (string)
      Initialization strategy for edge masks. Available options: `"normal"` for normal distribution initialization, or `"constant"` for constant value initialization.
    - **`init_strategy_for_feature`**: (string)
-     Initialization strategy for feature masks. Available options: `"normal"` or `"constant"`.
+     Initialization strategy for feature masks. Available options: `"normal"` or `"const"`.
    - **`use_mask_bias`**: (boolean)
      If `true`, the explainer will apply a bias term to the mask values.
+   - **`init_const`**: (float or integer)
+     Constant value for edge mask initialization.
+     
 3. **Mask Activation and Thresholding:**
 
    - **`edge_mask_activation`**: (string)

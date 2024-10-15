@@ -6,7 +6,7 @@
   "n_hop": 3,
   "init_strategy_for_edge": "normal",
   "use_mask_bias": false,
-  "init_strategy_for_feature": "constant",
+  "init_strategy_for_feature": "const",
   "opt_scheduler": null,
   "opt": "adam",
   "edge_mask_activation": "sigmoid",
