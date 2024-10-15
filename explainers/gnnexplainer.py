@@ -301,9 +301,9 @@ class GNNExplainerMetaCore(ExplainerCore):
             -feature_mask * torch.log(feature_mask + 1e-6) - (
                 1 - feature_mask) * torch.log(1 - feature_mask + 1e-6))
 
-        pred = self.model.custom_forward(self.get_input_handle_fn())
+        # pred = self.model.custom_forward(self.get_input_handle_fn())
         # transform to hard pred label
-        pred = torch.argmax(pred, dim=1)
+        pred_fixed = torch.argmax(output, dim=1)
 
         laplacian_loss_all = 0
         for g in self.masked['masked_gs']:
@@ -317,7 +317,7 @@ class GNNExplainerMetaCore(ExplainerCore):
                 torch.stack([indices[0], indices[0]], dim=0), degree[indices[0]],
                 g.size())
 
-            pred = pred.float().view(-1, 1)
+            pred = pred_fixed.float().view(-1, 1)
             pred_t = pred.t()
             laplacian_loss = (pred_t @ (torch.sparse.mm(L, pred))) / g._nnz()
             laplacian_loss_all += laplacian_loss
@@ -775,6 +775,8 @@ class GNNExplainerOriginalCore(ExplainerCore):
             -feature_mask * torch.log(feature_mask + 1e-6) - (
                 1 - feature_mask) * torch.log(1 - feature_mask + 1e-6))
 
+        pred_fixed = torch.argmax(output, dim=1)
+
         laplacian_loss_all = 0
         for g in self.masked['masked_gs']:
             g = g.coalesce()
@@ -787,7 +789,7 @@ class GNNExplainerOriginalCore(ExplainerCore):
                 torch.stack([indices[0], indices[0]], dim=0), degree[indices[0]],
                 g.size())
 
-            pred = output.float().view(-1, 1)
+            pred = pred_fixed.float().view(-1, 1)
             pred_t = pred.t()
             laplacian_loss = (pred_t @ (torch.sparse.mm(L, pred))) / g._nnz()
             laplacian_loss_all += laplacian_loss
