@@ -2,7 +2,9 @@ import json
 
 __all__ = [
     "load_explainer",
-    # "GradExplainer",
+    "GradExplainerMeta",
+    "GradExplainer",
+    "GradExplainerOriginal",
     # "SAExplainer",
     # "GOAtExplainer",
     # "SubgraphXExplainer",
@@ -12,7 +14,7 @@ __all__ = [
     "Explainer",
 ]
 
-# from .grad import GradExplainer
+from .grad import GradExplainerMeta, GradExplainer, GradExplainerOriginal
 # from .saliency import SAExplainer
 # from .goat import GOAtExplainer
 # from .subgraphx import SubgraphXExplainer
@@ -35,9 +37,12 @@ def load_explainer(explainer_name, model_name, dataset_name, explainer_config=No
 
     if explainer_name == "GNNExplainerMeta":
         return GNNExplainerMeta(config)
-
-    # elif explainer_name == "GradExplainer":
-    #     return GradExplainer(config)
+    elif explainer_name == "GradExplainerMeta":
+        return GradExplainerMeta(config)
+    elif explainer_name == "GradExplainer":
+        return GradExplainer(config)
+    elif explainer_name == "GradExplainerOriginal":
+        return GradExplainerOriginal(config)
     # elif explainer_name == "SAExplainer":
     #     return SAExplainer(config)
     # elif explainer_name == "GOAtExplainer":

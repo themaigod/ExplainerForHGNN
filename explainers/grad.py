@@ -73,12 +73,12 @@ class GradExplainerCore(ExplainerCore):
         loss = self.forward()
         loss.backward()
         features = self.temp_features
-        if self.model.support_multi_features:
+        if self.model.support_multi_features and self.config.get('use_meta', False):
             features_weight = [i.grad for i in features]
         else:
             features_weight = features.grad
         # normalize the weight
-        if self.model.support_multi_features:
+        if self.model.support_multi_features and self.config.get('use_meta', False):
             features_weight = [i / torch.sqrt(torch.sum(i ** 2, dim=1, keepdim=True)) for i in features_weight]
         else:
             features_weight = torch.sqrt(torch.sum(features_weight ** 2, dim=1))
@@ -130,7 +130,7 @@ class GradExplainerCore(ExplainerCore):
 
     def get_input_handle_fn_node_level(self):
 
-        if self.model.support_multi_features:
+        if self.model.support_multi_features and self.config.get('use_meta', False):
             def handle_fn(model):
                 gs, features = model.standard_input()
                 features_list = []
@@ -312,3 +312,15 @@ class GradExplainer(Explainer):
             os.makedirs(self.config['explanation_path'],
                         exist_ok=True)
             self.result.save(self.config['explanation_path'], **kwargs)
+
+
+class GradExplainerOriginal(GradExplainer):
+    def __init__(self, config):
+        super().__init__(config)
+        config['use_meta'] = False
+
+
+class GradExplainerMeta(GradExplainer):
+    def __init__(self, config):
+        super().__init__(config)
+        config['use_meta'] = True

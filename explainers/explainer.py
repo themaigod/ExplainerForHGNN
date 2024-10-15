@@ -2,7 +2,7 @@ class ExplainerCore:
     def __init__(self, config):
         self.config = config
         self.model = None
-        self.metrics = config.get("metrics", None)
+        self.metrics = config.get("eval_metrics", None)
 
         self.device = "cpu"
         self.registered_modules_and_params = {}
