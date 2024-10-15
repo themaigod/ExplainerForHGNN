@@ -819,9 +819,14 @@ class GNNExplainerOriginalCore(ExplainerCore):
             masked_gs_list = []
             for idx, g in enumerate(gs):
                 sub_edge_mask = self.edge_mask[self.subgraph_masks[idx]]
-                masked_g = g * fn.sigmoid(sub_edge_mask) if self.config[
+                sub_edge_mask = fn.sigmoid(sub_edge_mask) if self.config[
                                                                 'edge_mask_activation'] == 'sigmoid' else g * fn.relu(
                     sub_edge_mask)
+                g = g.coalesce()
+                sym_mask_sparse = torch.sparse_coo_tensor(g.indices(),
+                                                            sub_edge_mask,
+                                                            g.shape)
+                masked_g = g * sym_mask_sparse
                 masked_gs_list.append(masked_g)
             features = features * fn.sigmoid(self.feature_mask) if self.config[
                 'feature_mask_use_sigmoid'] else features * self.feature_mask
