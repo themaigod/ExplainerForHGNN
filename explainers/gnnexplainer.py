@@ -732,18 +732,60 @@ class GNNExplainerOriginalCore(ExplainerCore):
         pass
 
     def fit_node_level(self):
+        record = {}
+
         optimizer = self.build_optimizer()
-        scheduler = self.build_scheduler(optimizer) if self.config.get('opt_scheduler',
-                                                                       None) is not None else None
+        if self.config.get('opt_scheduler', None) is not None:
+            scheduler = self.build_scheduler(optimizer)
+        else:
+            scheduler = None
 
         self.model.eval()
+
         for epoch in range(self.config['epochs']):
             optimizer.zero_grad()
-            loss = self.forward_node_level()
+            loss = self.forward()
+            self.current_loss = loss.item()
             loss.backward()
             optimizer.step()
             if scheduler is not None:
                 scheduler.step()
+
+            if self.config['record']:
+                if epoch % self.config['record_step'] == 0:
+                    record[epoch] = {}
+                    record[epoch]['loss'] = loss.item()
+                    explanation = NodeExplanation()
+                    for metric in self.record_metrics:
+                        prepare_explanation_fn_for_node_scores[metric](explanation,
+                                                                       self)
+                        record[epoch][metric] = node_scores[metric](explanation)
+
+                    output_str = 'Node: {} Epoch: {}, Loss: {:.4f}'.format(self.node_id,
+                                                                           epoch,
+                                                                           loss.item())
+                    for metric in self.record_metrics:
+                        output_str += ', {}: {:.4f}'.format(metric,
+                                                            record[epoch][metric])
+                    print(output_str)
+
+        if self.config['record'] and self.config['epochs'] > 0:
+            if epoch not in record:
+                record[epoch] = {}
+                explanation = NodeExplanation()
+                for metric in self.record_metrics:
+                    prepare_explanation_fn_for_node_scores[metric](explanation,
+                                                                   self)
+                    record[epoch][metric] = node_scores[metric](explanation)
+                output_str = 'Node: {} Epoch: {}, Loss: {:.4f}'.format(self.node_id,
+                                                                       epoch,
+                                                                       loss.item())
+                for metric in self.record_metrics:
+                    output_str += ', {}: {:.4f}'.format(metric,
+                                                        record[epoch][metric])
+                print(output_str)
+
+        self.record = record
 
     def forward(self):
         if self.model.dataset.single_graph:
