@@ -12,7 +12,7 @@ We do fair comparison between different models and evaluate their performance on
 - Cuda 11 or higher (if you want to use GPU. Not sure about the lower version of Cuda)
 - Numpy
 
-Note: Pytorch seems to do a lot of changes in the sparse tensor (Compared to the previous version), and give 
+Note: Pytorch seems to do a lot of changes in the sparse tensor (Compared to the previous version), and give
 a better support for the sparse tensor, which we rely on. So the elder version of Pytorch may not work with this code.
 
 Note: Currently, we not rely on other common libraries like `torch_geometric`, `dgl`, etc. We hope to make the code more
@@ -55,7 +55,13 @@ Now Dataset available: ACM, DBLP, IMDB
 
 Now model available: HAN (with GAT), HAN (with GCN)
 
-Now explainer available: GNNExplainer
+Now explainer available: GNNExplainer, Grad
+
+We provide two versions of explainer: one is the original version (directly for heterogeneous), and the other is the
+version that further modify for the heterogeneous.
+
+Officially, you can use `GNNExplainerMeta`, `GNNExplainerOriginal`, `GradExplainerMeta`, `GradExplainerOriginal` to
+run the experiments.
 
 ### Plan:
 
