@@ -651,7 +651,7 @@ class GNNExplainerOriginalCore(ExplainerCore):
         pass
 
     def init_params_node_level(self):
-        gs, features = self.model.standard_input()
+        gs, features = self.extract_neighbors_input()
 
         total_graph = None
         for g in gs:
@@ -701,6 +701,11 @@ class GNNExplainerOriginalCore(ExplainerCore):
             subgraph_masks.append(mask_indices)
 
         self.subgraph_masks = subgraph_masks
+
+    def extract_neighbors_input(self):
+        gs, features = self.model.standard_input()
+        self.neighbor_input = {"gs": gs, "features": features}
+        return gs, features
 
     def node_level_explain(self):
         self.fit_node_level()

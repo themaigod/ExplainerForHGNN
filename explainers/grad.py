@@ -22,6 +22,8 @@ class GradExplainerCore(ExplainerCore):
 
         self.init_params()
 
+        self.extract_neighbors_input()
+
         if self.model.dataset.single_graph:
             if self.node_id is None:
                 raise ValueError('node_id is required for node-level explanation')
@@ -42,7 +44,9 @@ class GradExplainerCore(ExplainerCore):
         pass
 
     def extract_neighbors_input(self):
-        pass
+        gs, features = self.model.standard_input()
+        self.neighbor_input = {"gs": gs, "feature": features}
+        return gs, features
 
     def node_level_explain(self):
         self.fit()
