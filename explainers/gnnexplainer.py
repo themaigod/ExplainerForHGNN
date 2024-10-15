@@ -686,23 +686,21 @@ class GNNExplainerOriginalCore(ExplainerCore):
 
         # Create a dictionary mapping for faster lookup of edge indices
         total_indices = self.total_graph.coalesce().indices()
-        self.edge_index_map = defaultdict(list)
-        for i in range(total_indices.shape[1]):
-            edge = (total_indices[0, i].item(), total_indices[1, i].item())
-            self.edge_index_map[edge].append(i)
+        total_indices_flat = total_indices[0] * total_graph.size(1) + total_indices[1]
+        total_indices_dict = \
+        torch.arange(total_indices.size(1), device=self.model.device)[
+            torch.argsort(total_indices_flat)]
 
-        # Create subgraph masks using the edge index map
-        self.subgraph_masks = []
+        # Vectorized subgraph mask creation using advanced indexing
+        subgraph_masks = []
         for g in gs:
             g_indices = g.coalesce().indices()
-            mask_indices = []
-            for i in range(g_indices.shape[1]):
-                edge = (g_indices[0, i].item(), g_indices[1, i].item())
-                if edge in self.edge_index_map:
-                    mask_indices.extend(self.edge_index_map[edge])
-            subgraph_mask = torch.tensor(mask_indices, device=self.model.device,
-                                         dtype=torch.long)
-            self.subgraph_masks.append(subgraph_mask)
+            g_indices_flat = g_indices[0] * total_graph.size(1) + g_indices[1]
+            mask_indices = torch.searchsorted(total_indices_flat, g_indices_flat,
+                                              sorter=total_indices_dict)
+            subgraph_masks.append(mask_indices)
+
+        self.subgraph_masks = subgraph_masks
 
     def node_level_explain(self):
         self.fit_node_level()
