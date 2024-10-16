@@ -26,26 +26,31 @@ from .explainer import Explainer
 import os
 
 
+def load_default_config(explainer_name, model_name, dataset_name):
+    if os.path.exists(
+        f"./explainer_configs/{explainer_name}_{model_name}_{dataset_name}.json"):
+        with open(
+            f"./explainer_configs/{explainer_name}_{model_name}_{dataset_name}.json",
+            "r") as f:
+            config = json.load(f)
+    else:
+        with open(f"./explainer_configs/{explainer_name}.json", "r") as f:
+            config = json.load(f)
+        for key in config.keys():
+            if key.endswith("_path"):
+                config[key] = config[key].format(model_name=model_name,
+                                                 dataset_name=dataset_name,
+                                                 explainer_name=explainer_name)
+    return config
+
+
 def load_explainer(explainer_name, model_name, dataset_name, explainer_config=None):
     # load config first
     if explainer_config is not None:
         with open(explainer_config, "r") as f:
             config = json.load(f)
     else:
-        if os.path.exists(
-            f"./explainer_configs/{explainer_name}_{model_name}_{dataset_name}.json"):
-            with open(
-                f"./explainer_configs/{explainer_name}_{model_name}_{dataset_name}.json",
-                "r") as f:
-                config = json.load(f)
-        else:
-            with open(f"./explainer_configs/{explainer_name}.json", "r") as f:
-                config = json.load(f)
-            for key in config.keys():
-                if key.endswith("_path"):
-                    config[key] = config[key].format(model_name=model_name,
-                                                     dataset_name=dataset_name,
-                                                     explainer_name=explainer_name)
+        config = load_default_config(explainer_name, model_name, dataset_name)
 
     if explainer_name == "GNNExplainerMeta":
         return GNNExplainerMeta(config)

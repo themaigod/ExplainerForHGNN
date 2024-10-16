@@ -5,7 +5,7 @@ import random
 import os
 
 from models import load_model
-from explainers import load_explainer
+from explainers import load_explainer, load_default_config
 from datasets import load_dataset
 
 
@@ -297,12 +297,12 @@ def prepare_explainer_configs(explainer_configs, times, **kwargs):
     import json
     path = explainer_configs[0]
     if path is None:
-        path = "explainer_configs/{explainer_name}_{model_name}_{dataset_name}.json"
-        path = path.format(explainer_name=kwargs["explainer_name"],
-                           model_name=kwargs["model_name"],
-                           dataset_name=kwargs["dataset_name"])
-    with open(path, "r") as f:
-        config = json.load(f)
+        config = load_default_config(kwargs["explainer_name"],
+                                     kwargs["model_name"],
+                                     kwargs["dataset_name"])
+    else:
+        with open(path, "r") as f:
+            config = json.load(f)
 
     if kwargs.get("start_time", None) is not None:
         start_time = kwargs["start_time"]

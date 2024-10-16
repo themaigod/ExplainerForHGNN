@@ -19,6 +19,14 @@ Note: Currently, we not rely on other common libraries like `torch_geometric`, `
 compatible with different environments. But if it is tough to implement the model without these libraries in the future,
 we will use them.
 
+## Dataset
+
+### GTN Datasets
+
+We use GTN datasets, including ACM, DBLP, IMDB, available at 
+[GTN](https://github.com/seongjunyun/Graph_Transformer_Networks).
+
+
 ## Run the code
 
 To run the code, you can use the following command:
@@ -73,7 +81,7 @@ PGExplainer
   author={Luo, Dongsheng and Cheng, Wei and Xu, Dongkuan and Yu, Wenchao and Zong, Bo and Chen, Haifeng and Zhang, Xiang},
   journal={Advances in Neural Information Processing Systems},
   volume={33},
-  year={2024}
+  year={2020}
 }
 ```
 
