@@ -5,6 +5,9 @@
 This repository implements several explainable graph neural network models, and applies them to heterogeneous GNNs.
 We do fair comparison between different models and evaluate their performance on several benchmark datasets.
 
+If you find this repository useful, please star it. We will provide the citation information soon.
+
+
 ## Requirements
 
 - Python 3.10
@@ -96,6 +99,9 @@ version that further modify for the heterogeneous.
 
 Officially, you can use `GNNExplainerMeta`, `GNNExplainerOriginal`, `GradExplainerMeta`, `GradExplainerOriginal` to
 run the experiments.
+
+Some explainers (i.e. GOAt) require more general interface in model than the default design. We do not ensure that all
+explainers can work with all models. If you want to use a new model, you may need additional modification in the model.
 
 ### Plan:
 
