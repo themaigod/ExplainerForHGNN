@@ -7,6 +7,7 @@ from .prepare_combined_explanation_for_node_dataset_scores import \
 from .prepare_explanation_for_node_dataset_scores import \
     prepare_explanation_fn_for_node_dataset_scores
 import torch
+from tqdm import tqdm
 
 
 class GradExplainerCore(ExplainerCore):
@@ -248,7 +249,7 @@ class GradExplainer(Explainer):
             and kwargs.get('max_nodes') < len(test_labels):
             test_labels = test_labels[:kwargs.get('max_nodes')]
 
-        for idx, label in test_labels:
+        for idx, label in tqdm(test_labels, desc='Explaining nodes'):
             explain_node = GradExplainerCore(self.config)
             explain_node.to(self.device)
             explanation = explain_node.explain(self.model, node_id=idx)
