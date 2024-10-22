@@ -326,7 +326,7 @@ def prepare_explainer_configs(explainer_configs, times, **kwargs):
             json.dump(new_config, f)
             f.flush()
             os.fsync(f.fileno())
-        time.sleep(0.1)
+        time.sleep(1)
         yield new_config_path
 
 
