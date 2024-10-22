@@ -268,6 +268,7 @@ class GradExplainer(Explainer):
     def explain_selected_nodes(self, model, selected_nodes):
         self.model = model
         result = []
+        pbar = tqdm(total=len(selected_nodes), desc='Explaining nodes')
         for idx in selected_nodes:
             if idx not in self.model.dataset.labels[2]:
                 continue
@@ -275,6 +276,7 @@ class GradExplainer(Explainer):
             explain_node.to(self.device)
             explanation = explain_node.explain(self.model, node_id=idx)
             result.append(explanation)
+            pbar.update(1)
 
         result = self.construct_explanation(result)
 
