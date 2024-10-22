@@ -237,9 +237,9 @@ class GradExplainer(Explainer):
         self.model = model
 
         if self.model.dataset.single_graph:
-            self.node_level_explain(**kwargs)
+            return self.node_level_explain(**kwargs)
         else:
-            self.graph_level_explain(**kwargs)
+            return self.graph_level_explain(**kwargs)
 
     def node_level_explain(self, **kwargs):
         result = []
