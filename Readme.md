@@ -7,7 +7,6 @@ We do fair comparison between different models and evaluate their performance on
 
 If you find this repository useful, please star it. We will provide the citation information soon.
 
-
 ## Requirements
 
 - Python 3.10
@@ -35,26 +34,24 @@ Normally, we argue that those explainers with "-Meta" which are the modified ver
 better performance than the original version. This is because Meta version treats each subgraph separately, while the
 original version treats the whole graph as a single homogeneous graph.
 
-
 ## Dataset
 
 ### GTN Datasets
 
-We use GTN datasets, including ACM, DBLP, IMDB, available at 
+We use GTN datasets, including ACM, DBLP, IMDB, available at
 [GTN](https://github.com/seongjunyun/Graph_Transformer_Networks).
 
 ### Create edge directions
 
-We notice that many heterogeneous models require the edge direction. We provide an open API to create the edge 
+We notice that many heterogeneous models require the edge direction. We provide an open API to create the edge
 direction:
 
 ```python
 from utils import edge_direction_creation
 
-edge_direction_creation.process_node_classification_dataset_to_edge_directions(dataset_path={"Your dataset"}, 
-	label_path={"Your labels.pkl file"})
+edge_direction_creation.process_node_classification_dataset_to_edge_directions(dataset_path={"Your dataset"},
+                                                                               label_path={"Your labels.pkl file"})
 ```
-
 
 ## Run the code
 
@@ -64,12 +61,14 @@ To run the code, you can use the following command:
 python main.py --dataset {dataset_name} --model {model_name} --explainer {explainer_name} --random_seed {seed}
 ```
 
-You can do some customization by changing `./dataset_configs/{dataset_name}.json`, `./model_configs/{model_name}_{dataset_name}.json`
+You can do some customization by
+changing `./dataset_configs/{dataset_name}.json`, `./model_configs/{model_name}_{dataset_name}.json`
 and `./explainer_configs/{explainer_name}_{model_name}_{dataset_name}.json`.
 
 Note: Although we recommend using `./explainer_configs/{explainer_name}_{model_name}_{dataset_name}.json` to set
 the details for different models and datasets, you can just use `./explainer_configs/{explainer_name}.json` to set the
-new model and dataset. You can just provide the `./explainer_configs/{explainer_name}.json` if you design a new explainer.
+new model and dataset. You can just provide the `./explainer_configs/{explainer_name}.json` if you design a new
+explainer.
 
 More details can be found in the `python main.py -h`.
 
@@ -103,17 +102,23 @@ run the experiments.
 Some explainers (i.e. GOAt) require more general interface in model than the default design. We do not ensure that all
 explainers can work with all models. If you want to use a new model, you may need additional modification in the model.
 
+More importantly, explainers like GOAt have strict limitation on such as layer type, and furthermore, intrusive design
+in explainers into the model makes them hard to be generalized. We will try to make the code more general, but it is
+limited by the design of the explainer itself. You still can consider to modify the explainer to expand the model
+support, but these modifications may not be easy, and may out of the scope of their original design, especially for
+complicated attention mechanism in the model.
+
 ### Plan:
 
 PGExplainer
 
 ```bibtex
 @article{luo2020parameterized,
-  title={Parameterized Explainer for Graph Neural Network},
-  author={Luo, Dongsheng and Cheng, Wei and Xu, Dongkuan and Yu, Wenchao and Zong, Bo and Chen, Haifeng and Zhang, Xiang},
-  journal={Advances in Neural Information Processing Systems},
-  volume={33},
-  year={2020}
+    title = {Parameterized Explainer for Graph Neural Network},
+    author = {Luo, Dongsheng and Cheng, Wei and Xu, Dongkuan and Yu, Wenchao and Zong, Bo and Chen, Haifeng and Zhang, Xiang},
+    journal = {Advances in Neural Information Processing Systems},
+    volume = {33},
+    year = {2020}
 }
 ```
 
@@ -121,15 +126,15 @@ GNNExplainer
 
 ```bibtex
 @article{Ying2019GNNExplainerGE,
-  title={GNNExplainer: Generating Explanations for Graph Neural Networks},
-  author={Rex Ying and Dylan Bourgeois and Jiaxuan You and Marinka Zitnik and Jure Leskovec},
-  journal={Advances in neural information processing systems},
-  year={2019},
-  volume={32},
-  pages={
-          9240-9251
+    title = {GNNExplainer: Generating Explanations for Graph Neural Networks},
+    author = {Rex Ying and Dylan Bourgeois and Jiaxuan You and Marinka Zitnik and Jure Leskovec},
+    journal = {Advances in neural information processing systems},
+    year = {2019},
+    volume = {32},
+    pages = {
+    9240-9251
         },
-  url={https://api.semanticscholar.org/CorpusID:202572927}
+    url = {https://api.semanticscholar.org/CorpusID:202572927}
 }
 ```
 
@@ -137,11 +142,11 @@ SubgraphX
 
 ```bibtex
 @inproceedings{Yuan2021OnEO,
-  title={On Explainability of Graph Neural Networks via Subgraph Explorations},
-  author={Hao Yuan and Haiyang Yu and Jie Wang and Kang Li and Shuiwang Ji},
-  booktitle={International Conference on Machine Learning},
-  year={2021},
-  url={https://api.semanticscholar.org/CorpusID:231861768}
+    title = {On Explainability of Graph Neural Networks via Subgraph Explorations},
+    author = {Hao Yuan and Haiyang Yu and Jie Wang and Kang Li and Shuiwang Ji},
+    booktitle = {International Conference on Machine Learning},
+    year = {2021},
+    url = {https://api.semanticscholar.org/CorpusID:231861768}
 }
 ```
 
@@ -149,11 +154,11 @@ SA
 
 ```bibtex
 @inproceedings{baldassarre2019explainability,
-  title={Explainability techniques for graph convolutional networks},
-  author={Baldassarre, Federico and Azizpour, Hossein},
-  booktitle={Proceedings of the ICML 2019 Workshop on Learning and Reasoning with Graph-Structured Representations},
-  year={2019},
-  note={arXiv preprint arXiv:1905.13686}
+    title = {Explainability techniques for graph convolutional networks},
+    author = {Baldassarre, Federico and Azizpour, Hossein},
+    booktitle = {Proceedings of the ICML 2019 Workshop on Learning and Reasoning with Graph-Structured Representations},
+    year = {2019},
+    note = {arXiv preprint arXiv:1905.13686}
 }
 ```
 
@@ -161,12 +166,12 @@ GOAt
 
 ```bibtex
 @inproceedings{Lu2024GOAtEG,
-  title={GOAt: Explaining Graph Neural Networks via Graph Output Attribution},
-  author={Shengyao Lu and Keith G. Mills and Jiao He and Bang Liu and Di Niu},
-  booktitle={Proceedings of the International Conference on Learning Representations (ICLR)},
-  year={2024},
-  url={https://api.semanticscholar.org/CorpusID:267301280},
-  note={arXiv preprint arXiv:2401.14578}
+    title = {GOAt: Explaining Graph Neural Networks via Graph Output Attribution},
+    author = {Shengyao Lu and Keith G. Mills and Jiao He and Bang Liu and Di Niu},
+    booktitle = {Proceedings of the International Conference on Learning Representations (ICLR)},
+    year = {2024},
+    url = {https://api.semanticscholar.org/CorpusID:267301280},
+    note = {arXiv preprint arXiv:2401.14578}
 }
 
 ```
@@ -175,13 +180,13 @@ Grad
 
 ```bibtex
 @article{Selvaraju2016GradCAMVE,
-  title={Grad-CAM: Visual Explanations from Deep Networks via Gradient-Based Localization},
-  author={Ramprasaath R. Selvaraju and Abhishek Das and Ramakrishna Vedantam and Michael Cogswell and Devi Parikh and Dhruv Batra},
-  journal={International Journal of Computer Vision},
-  year={2016},
-  volume={128},
-  pages={336 - 359},
-  url={https://api.semanticscholar.org/CorpusID:15019293}
+    title = {Grad-CAM: Visual Explanations from Deep Networks via Gradient-Based Localization},
+    author = {Ramprasaath R. Selvaraju and Abhishek Das and Ramakrishna Vedantam and Michael Cogswell and Devi Parikh and Dhruv Batra},
+    journal = {International Journal of Computer Vision},
+    year = {2016},
+    volume = {128},
+    pages = {336 - 359},
+    url = {https://api.semanticscholar.org/CorpusID:15019293}
 }
 ```
 
@@ -189,13 +194,13 @@ The applicable version for GNN is:
 
 ```bibtex
 @INPROCEEDINGS{8954227,
-  author={Pope, Phillip E. and Kolouri, Soheil and Rostami, Mohammad and Martin, Charles E. and Hoffmann, Heiko},
-  booktitle={2019 IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)}, 
-  title={Explainability Methods for Graph Convolutional Neural Networks}, 
-  year={2019},
-  volume={},
-  number={},
-  pages={10764-10773},
-  keywords={Deep Learning;Deep Learning},
-  doi={10.1109/CVPR.2019.01103}}
+    author = {Pope, Phillip E. and Kolouri, Soheil and Rostami, Mohammad and Martin, Charles E. and Hoffmann, Heiko},
+    booktitle = {2019 IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)},
+    title = {Explainability Methods for Graph Convolutional Neural Networks},
+    year = {2019},
+    volume = {},
+    number = {},
+    pages = {10764-10773},
+    keywords = {Deep Learning;Deep Learning},
+    doi = {10.1109/CVPR.2019.01103} }
 ```
