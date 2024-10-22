@@ -291,6 +291,7 @@ def prepare_model_configs(model_configs, times, **kwargs):
                 new_config[key] = value
         with open(new_config_path, "w") as f:
             json.dump(new_config, f)
+        time.sleep(0.1)
         yield new_config_path
 
 
