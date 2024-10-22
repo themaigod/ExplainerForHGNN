@@ -141,7 +141,7 @@ class NodeExplanation(BaseExplanation):
         if item in self._other_data:
             return self._other_data[item]
         else:
-            raise None
+            return None
 
     def __getitem__(self, item):
         return self._other_data[item]
