@@ -201,7 +201,7 @@ class HANLayer(nn.Module):
         h_old = h
 
         for i, g in enumerate(gs):
-            if isinstance(h, tuple) or isinstance(h, list):
+            if isinstance(h_old, tuple) or isinstance(h_old, list):
                 h = h_old[i]
             if self.dropout is not None:
                 h = self.dropout(h)
