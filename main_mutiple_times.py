@@ -3,6 +3,7 @@ import torch
 import numpy as np
 import random
 import os
+import time
 
 from models import load_model
 from explainers import load_explainer, load_default_config
@@ -322,6 +323,7 @@ def prepare_explainer_configs(explainer_configs, times, **kwargs):
                 new_config[key] = value
         with open(new_config_path, "w") as f:
             json.dump(new_config, f)
+        time.sleep(0.1)
         yield new_config_path
 
 

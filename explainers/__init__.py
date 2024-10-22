@@ -13,6 +13,7 @@ __all__ = [
     # "PGExplainer",
     # "CGEExplainer",
     "Explainer",
+    "load_default_config"
 ]
 
 from .grad import GradExplainerMeta, GradExplainer, GradExplainerOriginal
