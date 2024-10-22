@@ -83,9 +83,12 @@ class GradExplainerCore(ExplainerCore):
             features_weight = features.grad
         # normalize the weight
         if self.model.support_multi_features and self.config.get('use_meta', False):
-            features_weight = [i / torch.sqrt(torch.sum(i ** 2, dim=1, keepdim=True))
+            for i in range(len(features_weight)):
+                features_weight[i][torch.isnan(features_weight[i])] = 0
+            features_weight = [i / torch.sqrt(torch.sum(i ** 2, dim=1))
                                for i in features_weight]
         else:
+            features_weight[torch.isnan(features_weight)] = 0
             features_weight = torch.sqrt(torch.sum(features_weight ** 2, dim=1))
         self.node_mask = features_weight
 
