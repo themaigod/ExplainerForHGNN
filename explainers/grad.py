@@ -98,7 +98,7 @@ class GradExplainerCore(ExplainerCore):
 
     @staticmethod
     def convert_node_mask_to_edge_mask_single(node_mask, g):
-        g = g.coleasce()
+        g = g.coalesce()
         indices = g.indices()
         values = g.values()
         edge_mask = torch.zeros_like(values)
