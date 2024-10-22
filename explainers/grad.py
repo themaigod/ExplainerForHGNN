@@ -83,17 +83,24 @@ class GradExplainerCore(ExplainerCore):
             features_weight = features.grad
         # normalize the weight
         if self.model.support_multi_features and self.config.get('use_meta', False):
-            features_weight = [i / torch.sqrt(torch.sum(i ** 2, dim=1, keepdim=True)) for i in features_weight]
+            features_weight = [i / torch.sqrt(torch.sum(i ** 2, dim=1, keepdim=True))
+                               for i in features_weight]
         else:
             features_weight = torch.sqrt(torch.sum(features_weight ** 2, dim=1))
         self.node_mask = features_weight
 
-        self.edge_mask = self.convert_node_mask_to_edge_mask(self.node_mask, self.temp_gs)
+        self.edge_mask = self.convert_node_mask_to_edge_mask(self.node_mask,
+                                                             self.temp_gs)
 
     def convert_node_mask_to_edge_mask(self, node_mask, gs):
         edge_mask = []
-        for g in gs:
-            edge_mask.append(self.convert_node_mask_to_edge_mask_single(node_mask, g))
+        for idx, g in enumerate(gs):
+            if self.model.support_multi_features and self.config.get('use_meta', False):
+                edge_mask.append(
+                    self.convert_node_mask_to_edge_mask_single(node_mask[idx], g))
+            else:
+                edge_mask.append(
+                    self.convert_node_mask_to_edge_mask_single(node_mask, g))
         return edge_mask
 
     @staticmethod
@@ -187,6 +194,8 @@ class GradExplainerCore(ExplainerCore):
     def edge_mask_for_output(self):
         if 'edge_mask' not in self.__dict__:
             return None
+        if not isinstance(self.edge_mask, list):
+            return [self.edge_mask]
         return self.edge_mask
 
     @property
