@@ -291,7 +291,19 @@ def prepare_model_configs(model_configs, times, **kwargs):
                 new_config[key] = value
         with open(new_config_path, "w") as f:
             json.dump(new_config, f)
-        time.sleep(0.1)
+        # ensure the file is written
+        count = 0
+        while True:
+            try:
+                with open(new_config_path, "r") as f:
+                    config_tmp = json.load(f)
+                del config_tmp
+                break
+            except Exception as e:
+                count += 1
+                if count > 10:
+                    raise e
+                time.sleep(1)
         yield new_config_path
 
 
@@ -324,9 +336,19 @@ def prepare_explainer_configs(explainer_configs, times, **kwargs):
                 new_config[key] = value
         with open(new_config_path, "w") as f:
             json.dump(new_config, f)
-            f.flush()
-            os.fsync(f.fileno())
-        time.sleep(1)
+        # ensure the file is written
+        count = 0
+        while True:
+            try:
+                with open(new_config_path, "r") as f:
+                    config_tmp = json.load(f)
+                del config_tmp
+                break
+            except Exception as e:
+                count += 1
+                if count > 10:
+                    raise e
+                time.sleep(1)
         yield new_config_path
 
 
