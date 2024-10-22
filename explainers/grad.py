@@ -110,10 +110,7 @@ class GradExplainerCore(ExplainerCore):
     def convert_node_mask_to_edge_mask_single(node_mask, g):
         g = g.coalesce()
         indices = g.indices()
-        values = g.values()
-        edge_mask = torch.zeros_like(values)
-        for i in range(len(edge_mask)):
-            edge_mask[i] = node_mask[indices[0][i]] * node_mask[indices[1][i]]
+        edge_mask = node_mask[indices[0]] * node_mask[indices[1]]
         return edge_mask
 
     def get_loss(self, output, mask=None):
