@@ -127,7 +127,7 @@ class GradExplainerCore(ExplainerCore):
         if mask is not None:
             class_id = mask
         else:
-            class_id = output.argmax()
+            class_id = output.argmax(-1)[self.node_id]
         loss = self.model.custom_loss(output, class_id)
         return loss
 
