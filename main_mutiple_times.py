@@ -220,7 +220,7 @@ def multiple_times(name):
     return [os.path.join(name, i) for i in sorted_list], True
 
 
-def main():
+def main(args):
     args = getargs()
     times, start_time = get_times(args.random_seed, args.dataset_config,
                                   args.model_config,
@@ -244,7 +244,10 @@ def main():
         set_seed(args.random_seed, args.ensure_reproducibility, i)
         print("Running {}-th time / {} times".format(i + 1, times))
         model = train_model(args.model, args.dataset, args.device, dataset_configs,
-                            model_configs)
+                            model_configs, is_load_model=args.load_model,
+                            is_load_dataset=args.load_dataset,
+                            only_load_test_label_shuffle=args.only_load_test_label_shuffle
+                            )
         if args.save_model:
             model.save()
         if args.save_attention:
