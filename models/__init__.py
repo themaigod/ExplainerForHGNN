@@ -1,4 +1,5 @@
 import json
+import os
 
 __all__ = [
     "load_model",
@@ -20,7 +21,7 @@ from .model import BaseModel
 from .han_gcn import HAN_GCN
 
 
-def load_model(model_name, dataset, model_config=None):
+def load_model(model_name, dataset, model_config=None, is_load_model=False):
     # load config first
     if model_config is not None:
         with open(model_config, "r") as f:
@@ -29,6 +30,14 @@ def load_model(model_name, dataset, model_config=None):
         with open(f"./model_configs/{model_name}_{dataset.dataset_name}.json",
                   "r") as f:
             config = json.load(f)
+
+    # enable reusing saved model
+    if is_load_model and config.get("save_path", None):
+        model_path = config["save_path"]
+        if not os.path.exists(model_path):
+            raise FileNotFoundError(f"Model {model_path} not found")
+        else:
+            return globals()[model_name].load(model_path, dataset)
 
     if model_name == "HAN":
         return HAN(config, dataset)

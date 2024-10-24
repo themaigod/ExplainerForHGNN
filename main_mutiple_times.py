@@ -54,6 +54,22 @@ def getargs_optional(parser):
                         help='Start time for running')
     parser.add_argument('--explain_max_nodes', type=int, default=None,
                         help='Max number of nodes to explain')
+    parser.add_argument('--load_model', type=str, default=False,
+                        help='if other explanation model has been run, you can set' + \
+                             ' True to load the existing model. ' + \
+                             'It will try to load the model from the' + \
+                             'same path as the model config')
+    parser.add_argument('--load_dataset', type=str, default=False,
+                        help='enable to load the existing dataset. If not exist, ' + \
+                             'it will try to save the dataset.' + \
+                             'It is recommended if you allow shuffling' + \
+                             ' in the dataset. However, if it is a large dataset,' + \
+                             ' it will double the storage usage. If you want to' + \
+                             ' just save the shuffled test label, you can' + \
+                             ' set only_load_test_label_shuffle to True')
+    parser.add_argument('--only_load_test_label_shuffle', type=str, default=False,
+                        help='only load test label shuffle. available only if' + \
+                             ' load_dataset is True')
     return parser
 
 
@@ -76,13 +92,19 @@ def set_seed(seed, ensure_reproducibility=False, times=0):
 
 
 def train_model(model_name, dataset_path, device, dataset_configs=None,
-                model_configs=None
+                model_configs=None, is_load_model=False, is_load_dataset=False,
+                only_load_test_label_shuffle=False
                 ):
     dataset_config = dataset_configs.__next__()
     model_config = model_configs.__next__()
-    dataset = load_dataset(dataset_path, dataset_config)
-    model = load_model(model_name, dataset, model_config)
+    dataset = load_dataset(dataset_path, dataset_config, is_load_dataset=is_load_dataset,
+                           only_load_test_label_shuffle=only_load_test_label_shuffle)
+    model = load_model(model_name, dataset, model_config, is_load_model=is_load_model)
     model.to(device)
+
+    if is_load_model:
+        print("Use existing model, skip training")
+        return model
 
     # Train model
     print("Training model...")
