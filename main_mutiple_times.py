@@ -117,6 +117,7 @@ def train_model(model_name, dataset_path, device, dataset_configs=None,
     print("----------------")
     for key, value in summary.items():
         print(f"{key}: {value}")
+    print("----------------")
 
     return model
 
@@ -135,6 +136,7 @@ def explain(model, explainer_name, device, explainer_configs=None, minimize=Fals
     print("----------------")
     for key, value in result.items():
         print(f"{key}: {value}")
+    print("----------------")
     if minimize:
         minimize_keys = ['edge_mask', 'node_id']
         if explainer_name in ['GradExplainerMeta', 'GradExplainerOriginal']:
