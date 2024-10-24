@@ -220,7 +220,7 @@ def multiple_times(name):
     return [os.path.join(name, i) for i in sorted_list], True
 
 
-def main(args):
+def main():
     args = getargs()
     times, start_time = get_times(args.random_seed, args.dataset_config,
                                   args.model_config,
