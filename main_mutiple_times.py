@@ -114,7 +114,10 @@ def explain(model, explainer_name, device, explainer_configs=None, minimize=Fals
     for key, value in result.items():
         print(f"{key}: {value}")
     if minimize:
-        explainer.save_explanation(filter_keys=['edge_mask'])
+        minimize_keys = ['edge_mask', 'node_id']
+        if explainer_name in ['GradExplainerMeta', 'GradExplainerOriginal']:
+            minimize_keys.append('node_mask')
+        explainer.save_explanation(filter_keys=minimize_keys)
     elif filter_keys is not None and len(filter_keys) > 0:
         explainer.save_explanation(filter_keys=filter_keys)
     else:
