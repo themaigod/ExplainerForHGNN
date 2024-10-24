@@ -56,7 +56,7 @@ class GradExplainerCore(ExplainerCore):
     def construct_explanation(self):
         explanation = NodeExplanation()
         explanation = standard_explanation(explanation, self)
-        explanation.node_mask = self.node_mask
+        explanation.node_mask = self.node_mask_for_output
         for metric in self.config['eval_metrics']:
             prepare_explanation_fn_for_node_dataset_scores[metric](explanation, self)
         self.explanation = explanation
