@@ -32,8 +32,8 @@ def load_model(model_name, dataset, model_config=None, is_load_model=False):
             config = json.load(f)
 
     # enable reusing saved model
-    if is_load_model and config.get("save_path", None):
-        model_path = config["save_path"]
+    if is_load_model and config.get("weight_path", None):
+        model_path = config["weight_path"]
         if not os.path.exists(model_path):
             raise FileNotFoundError(f"Model {model_path} not found")
         else:
