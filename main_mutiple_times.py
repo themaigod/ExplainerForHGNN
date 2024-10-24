@@ -54,12 +54,12 @@ def getargs_optional(parser):
                         help='Start time for running')
     parser.add_argument('--explain_max_nodes', type=int, default=None,
                         help='Max number of nodes to explain')
-    parser.add_argument('--load_model', type=str, default=False,
+    parser.add_argument('--load_model', type=bool, default=False,
                         help='if other explanation model has been run, you can set' + \
                              ' True to load the existing model. ' + \
                              'It will try to load the model from the' + \
                              'same path as the model config')
-    parser.add_argument('--load_dataset', type=str, default=False,
+    parser.add_argument('--load_dataset', type=bool, default=False,
                         help='enable to load the existing dataset. If not exist, ' + \
                              'it will try to save the dataset.' + \
                              'It is recommended if you allow shuffling' + \
@@ -67,7 +67,7 @@ def getargs_optional(parser):
                              ' it will double the storage usage. If you want to' + \
                              ' just save the shuffled test label, you can' + \
                              ' set only_load_test_label_shuffle to True')
-    parser.add_argument('--only_load_test_label_shuffle', type=str, default=False,
+    parser.add_argument('--only_load_test_label_shuffle', type=bool, default=False,
                         help='only load test label shuffle. available only if' + \
                              ' load_dataset is True')
     return parser
