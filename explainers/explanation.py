@@ -185,7 +185,7 @@ class NodeExplanation(BaseExplanation):
         import pickle as pkl
         with open(file_path, 'rb') as f:
             data = pkl.load(f)
-            return cls.from_packaged(data)
+        return cls.from_packaged(data)
 
     def keys(self):
         return self._other_data.keys()
