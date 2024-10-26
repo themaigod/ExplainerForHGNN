@@ -142,7 +142,7 @@ def show_alignment(record):
     explanation = np.array(explanation)
     explanation = np.array([explanation[:, i, :].mean(1) for i in range(explanation.shape[1])])
     num_meta_paths = explanation.shape[0]
-    explanation_sum = sum([explanation[i, :, :] for i in range(num_meta_paths)])
+    explanation_sum = sum([explanation[i, :] for i in range(num_meta_paths)])
     for i in range(num_meta_paths):
         # print("Kernel tau:",
         print("Meta-path", i, "Kernel tau:",
