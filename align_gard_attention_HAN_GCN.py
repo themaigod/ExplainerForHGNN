@@ -133,7 +133,7 @@ def main():
     for time in range(args.times):
         set_seed(time, args.ensure_reproducibility)
         print("Running {}-th time / {} times".format(time + 1, args.times))
-        model = train_model(args.model, args.dataset, args.device,
+        model = train_model(args.model, args.dataset_path, args.device,
                             is_load_dataset=args.load_dataset,
                             only_load_test_label_shuffle=args.only_load_test_label_shuffle
                             )
