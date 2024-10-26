@@ -117,10 +117,9 @@ def get_array(explainer, model):
     #
     # return [attention, [explanation_array1, explanation_array2]]
     explanation_array = [
-        [[explanations[i].node_mask[k][j] for i in range(num_nodes)] for j in
-         range(num_nodes)] for k in range(num_meta_paths)]
+        np.array([[explanations[i].node_mask[k][j] for i in range(num_nodes)] for j in
+         range(num_nodes)]).mean(0) for k in range(num_meta_paths)]
     explanation_array = np.array(explanation_array)
-    explanation_array = explanation_array.mean(1)
     return [attention, explanation_array]
 
 
@@ -141,15 +140,15 @@ def show_alignment(record):
     import numpy as np
     attention = np.array(attention)
     explanation = np.array(explanation)
-    explanation = explanation.mean(2)
-    num_meta_paths = explanation.shape[1]
-    explanation_sum = explanation.sum(1)
+    explanation = np.array([explanation[:, i, :].mean(1) for i in range(explanation.shape[1])])
+    num_meta_paths = explanation.shape[0]
+    explanation_sum = sum([explanation[i, :, :] for i in range(num_meta_paths)])
     for i in range(num_meta_paths):
         # print("Kernel tau:",
         print("Meta-path", i, "Kernel tau:",
-              kendalltau(attention[:, i], explanation[:, i] / explanation_sum))
+              kendalltau(attention[:, i], explanation[i, :] / explanation_sum))
         print("Meta-path", i, "Spearman:",
-              spearmanr(attention[:, i], explanation[:, i] / explanation_sum))
+              spearmanr(attention[:, i], explanation[i, :] / explanation_sum))
 
 
 def main():
