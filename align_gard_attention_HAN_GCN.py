@@ -8,7 +8,8 @@ def getargs():
     parser.add_argument('--dataset_path', type=str, default='../data/ACM',
                         help='Dataset path to use')
     parser.add_argument('--device', type=int, default=0, help='Device to use')
-    parser.add_argument('--explainer', type=str, default='GradExplainerMeta', help='Explainer to use')
+    parser.add_argument('--explainer', type=str, default='GradExplainerMeta',
+                        help='Explainer to use')
     parser.add_argument('--times', type=int, default=100, help='Number of times to run')
     parser.add_argument('--save_path', type=str, default='./tmp/ex_at/relation.pkl',
                         help='Path to save the relation')
@@ -79,7 +80,7 @@ def get_array(explainer, model):
     import torch
     attention = torch.load(tmp_path)[0][0]
     attention = torch.softmax(attention[0][0], dim=-2)
-    attention = attention[:, :, 0].detach().cpu().numpy()
+    attention = attention[:, :].detach().cpu().numpy()
 
     explanations = explainer.result
     attention = attention[explanations.node_id]
@@ -111,10 +112,19 @@ def show_alignment(record):
     from scipy.stats import spearmanr
     from scipy.stats import kendalltau
 
-    attention = [r[0] for r in record]
-    explanation1 = [r[1] for r in record]
+    attention = [r[0][:, 0] for r in record]
+    explanation1 = [r[1][0].mean(0) for r in record]
+    explanation2 = [r[1][1].mean(0) for r in record]
 
+    import numpy as np
+    attention = np.array(attention)
+    explanation1 = np.array(explanation1)
+    explanation2 = np.array(explanation2)
 
+    explanation = explanation2 / explanation1
+
+    print("Kernel tau:", kendalltau(attention, explanation))
+    print("Spearman:", spearmanr(attention, explanation))
 
 
 def main():
@@ -135,6 +145,7 @@ def main():
         gc.collect()  # ensure memory of previous explainer is released
 
         if (time + 1) % 10 == 0:
+            print("Show alignment of {}-th time".format(time + 1))
             show_alignment(record)
 
     save_result(record, args.save_path)
