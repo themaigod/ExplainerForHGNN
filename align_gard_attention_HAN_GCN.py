@@ -93,7 +93,7 @@ def get_array(explainer, model):
             time.sleep(1)
 
     attention = torch.load(tmp_path)[0][0]
-    attention = torch.softmax(attention[0][0], dim=-2)
+    attention = torch.softmax(attention, dim=-2)
     attention = attention[:, :].detach().cpu().numpy()
 
     explanations = explainer.result
