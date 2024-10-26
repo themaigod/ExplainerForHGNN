@@ -118,7 +118,7 @@ def get_array(explainer, model):
     # return [attention, [explanation_array1, explanation_array2]]
     explanation_array = [
         np.array([[explanations[i].node_mask[k][j] for i in range(num_nodes)] for j in
-         range(num_nodes)]).mean(0) for k in range(num_meta_paths)]
+         explanations.node_id]).mean(0) for k in range(num_meta_paths)]
     explanation_array = np.array(explanation_array)
     return [attention, explanation_array]
 
