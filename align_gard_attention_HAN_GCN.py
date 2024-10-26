@@ -102,16 +102,26 @@ def get_array(explainer, model):
     attention = attention.mean(0)
 
     import numpy as np
-    explanation_array1 = np.array(
-        [[explanations[i].node_mask[0][j] for i in range(100)] for j in
-         explanations.node_id])
-    explanation_array2 = np.array(
-        [[explanations[i].node_mask[1][j] for i in range(100)] for j in
-         explanations.node_id])
-    explanation_array1 = explanation_array1.mean(0)
-    explanation_array2 = explanation_array2.mean(0)
-
-    return [attention, [explanation_array1, explanation_array2]]
+    num_nodes = len(explanations.node_id)
+    if num_nodes == 0:
+        raise ValueError("No nodes to explain")
+    num_meta_paths = len(explanations[0].node_mask)
+    # explanation_array1 = np.array(
+    #     [[explanations[i].node_mask[0][j] for i in range(100)] for j in
+    #      explanations.node_id])
+    # explanation_array2 = np.array(
+    #     [[explanations[i].node_mask[1][j] for i in range(100)] for j in
+    #      explanations.node_id])
+    # explanation_array1 = explanation_array1.mean(0)
+    # explanation_array2 = explanation_array2.mean(0)
+    #
+    # return [attention, [explanation_array1, explanation_array2]]
+    explanation_array = [
+        [[explanations[i].node_mask[k][j] for i in range(num_nodes)] for j in
+         range(num_nodes)] for k in range(num_meta_paths)]
+    explanation_array = np.array(explanation_array)
+    explanation_array = explanation_array.mean(1)
+    return [attention, explanation_array]
 
 
 def save_result(record, save_path):
@@ -126,19 +136,20 @@ def show_alignment(record):
     from scipy.stats import spearmanr
     from scipy.stats import kendalltau
 
-    attention = [r[0][:, 0] for r in record]
-    explanation1 = [r[1][0].mean(0) for r in record]
-    explanation2 = [r[1][1].mean(0) for r in record]
-
+    attention = [r[0] for r in record]
+    explanation = [r[1] for r in record]
     import numpy as np
-    attention = np.array(attention)[:, 0]
-    explanation1 = np.array(explanation1)
-    explanation2 = np.array(explanation2)
-
-    explanation = explanation2 / explanation1
-
-    print("Kernel tau:", kendalltau(attention, explanation))
-    print("Spearman:", spearmanr(attention, explanation))
+    attention = np.array(attention)
+    explanation = np.array(explanation)
+    explanation = explanation.mean(1)
+    num_meta_paths = explanation.shape[0]
+    explanation_sum = explanation.sum(0)
+    for i in range(num_meta_paths):
+        # print("Kernel tau:",
+        print("Meta-path", i, "Kernel tau:",
+              kendalltau(attention[:, i], explanation[i] / explanation_sum))
+        print("Meta-path", i, "Spearman:",
+              spearmanr(attention[:, i], explanation[i] / explanation_sum))
 
 
 def main():
