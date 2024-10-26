@@ -76,8 +76,22 @@ def get_array(explainer, model):
     import os
     os.makedirs(os.path.dirname(tmp_path), exist_ok=True)
     model.save_attention(tmp_path)
-
     import torch
+    # ensure the model attention is saved
+    count = 0
+    while True:
+        try:
+            with open(tmp_path, "rb") as f:
+                attention_tmp = torch.load(f)
+            del attention_tmp
+            break
+        except Exception as e:
+            count += 1
+            if count > 10:
+                raise e
+            import time
+            time.sleep(1)
+
     attention = torch.load(tmp_path)[0][0]
     attention = torch.softmax(attention[0][0], dim=-2)
     attention = attention[:, :].detach().cpu().numpy()
