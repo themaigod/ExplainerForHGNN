@@ -147,9 +147,9 @@ def show_alignment(record):
     for i in range(num_meta_paths):
         # print("Kernel tau:",
         print("Meta-path", i, "Kernel tau:",
-              kendalltau(attention[:, i], explanation[i] / explanation_sum))
+              kendalltau(attention[:, i], explanation[:, i] / explanation_sum))
         print("Meta-path", i, "Spearman:",
-              spearmanr(attention[:, i], explanation[i] / explanation_sum))
+              spearmanr(attention[:, i], explanation[:, i] / explanation_sum))
 
 
 def main():
