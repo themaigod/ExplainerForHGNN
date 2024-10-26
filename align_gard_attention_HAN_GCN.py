@@ -131,7 +131,7 @@ def show_alignment(record):
     explanation2 = [r[1][1].mean(0) for r in record]
 
     import numpy as np
-    attention = np.array(attention)
+    attention = np.array(attention)[:, 0]
     explanation1 = np.array(explanation1)
     explanation2 = np.array(explanation2)
 
