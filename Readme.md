@@ -110,6 +110,8 @@ complicated attention mechanism in the model.
 
 ### Plan:
 
+#### Homogeneous Graph
+
 PGExplainer
 
 ```bibtex
@@ -203,4 +205,62 @@ The applicable version for GNN is:
     pages = {10764-10773},
     keywords = {Deep Learning;Deep Learning},
     doi = {10.1109/CVPR.2019.01103} }
+```
+
+#### Heterogeneous Graph
+
+PaGE-Link
+
+```bibtex
+@article{Zhang2023PaGELinkPG,
+  title={PaGE-Link: Path-based Graph Neural Network Explanation for Heterogeneous Link Prediction},
+  author={Shichang Zhang and Jiani Zhang and Xiang Song and Soji Adeshina and Da Zheng and Christos Faloutsos and Yizhou Sun},
+  journal={Proceedings of the ACM Web Conference 2023},
+  year={2023},
+  url={https://api.semanticscholar.org/CorpusID:257205930}
+}
+```
+
+CE-based 
+
+```bibtex
+@article{Khler2024UtilizingDL,
+  title={Utilizing Description Logics for Global Explanations of Heterogeneous Graph Neural Networks},
+  author={Dominik K{\"o}hler and Stefan Heindorf},
+  journal={ArXiv},
+  year={2024},
+  volume={abs/2405.12654},
+  url={https://api.semanticscholar.org/CorpusID:269930057}
+}
+```
+
+CF-HGExplainer
+
+```bibtex
+@article{Yang2023CounterfactualLO,
+  title={Counterfactual Learning on Heterogeneous Graphs with Greedy Perturbation},
+  author={Qiang Yang and Changsheng Ma and Qiannan Zhang and Xin Gao and Chuxu Zhang and Xiangliang Zhang},
+  journal={Proceedings of the 29th ACM SIGKDD Conference on Knowledge Discovery and Data Mining},
+  year={2023},
+  url={https://api.semanticscholar.org/CorpusID:260499632}
+}
+```
+
+Will be implemented if the authors really provide the code. Currently, the repository is empty.
+```github
+https://github.com/gitdevqiang/CF-HGExplainer
+```
+
+HENCE-X
+
+```bibtex
+@article{Lv2023HENCEXTH,
+  title={HENCE-X: Toward Heterogeneity-agnostic Multi-level Explainability for Deep Graph Networks},
+  author={Gengsi Lv and C. Zhang and Lei Chen},
+  journal={Proc. VLDB Endow.},
+  year={2023},
+  volume={16},
+  pages={2990-3003},
+  url={https://api.semanticscholar.org/CorpusID:261197657}
+}
 ```
