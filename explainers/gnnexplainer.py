@@ -115,6 +115,7 @@ class GNNExplainerMetaCore(ExplainerCore):
             new_gs.append(torch.sparse_coo_tensor(new_indices, new_values, g.shape))
 
         self.neighbor_input = {"gs": new_gs, "features": features[self.used_nodes]}
+        return self.neighbor_input["gs"], self.neighbor_input["features"]
 
     def init_params_node_level(self):
         # consider for heterogeneous graph
