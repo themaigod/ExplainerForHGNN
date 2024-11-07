@@ -704,8 +704,10 @@ class HENCEXCore(ExplainerCore):
         for g in gs:
             indices = g.indices()
             # !TODO: Test it in the future, and then expand it to other algorithms
-            mask = torch.isin(indices[0], torch.tensor(temp_used_nodes_tensor)) & \
-                   torch.isin(indices[1], torch.tensor(temp_used_nodes_tensor))
+            mask = torch.isin(indices[0], torch.tensor(temp_used_nodes_tensor,
+                                                       device=self.device_string)) & \
+                   torch.isin(indices[1], torch.tensor(temp_used_nodes_tensor,
+                                                       device=self.device_string))
             new_indices = torch.stack(
                 [torch.tensor([self.recovery_dict[node] for node in indices[0][mask]]),
                  torch.tensor([self.recovery_dict[node] for node in indices[1][mask]])],
