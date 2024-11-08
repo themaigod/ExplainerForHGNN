@@ -437,7 +437,7 @@ class HENCEXCore(ExplainerCore):
         candidates = []
         candidates_features = []
 
-        processing_list = set(self.mapping_node_id())
+        processing_list = {self.mapping_node_id()}
 
         processed = set()
         c = 0
