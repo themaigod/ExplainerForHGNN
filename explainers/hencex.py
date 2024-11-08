@@ -221,7 +221,7 @@ class HENCEXCore(ExplainerCore):
 
     def feature_raw2out(self, candidates_features_dict, selected_candidates):
         gs, features = self.extract_neighbors_input()
-        feature_mask = np.zeros_like(features, dtype=bool)
+        feature_mask = np.zeros_like(features.cpu().numpy(), dtype=bool)
         for node in selected_candidates:
             feature_mask[node, candidates_features_dict[node]] = True
         self.feature_mask = feature_mask
