@@ -518,6 +518,8 @@ class HENCEXCore(ExplainerCore):
         mask_all = []
         perturb_position = []
 
+        use_softmax = self.config.get('result_use_softmax', True)
+
         for i in range(num_samples):
             features_perturbed = copy.deepcopy(features)
             # positions = torch.nonzero(features)
@@ -543,6 +545,8 @@ class HENCEXCore(ExplainerCore):
 
             with torch.no_grad():
                 perturb_result = self.model.custom_forward(handle_fn)
+                if use_softmax:
+                    perturb_result = perturb_result.softmax(dim=1)
                 perturb_result = perturb_result[self.mapping_node_id()]
                 perturb_score = perturb_result[target].item()
             perturb_score_all.append(perturb_score)
@@ -602,6 +606,8 @@ class HENCEXCore(ExplainerCore):
 
                 with torch.no_grad():
                     perturb_result = self.model.custom_forward(handle_fn)
+                    if use_softmax:
+                        perturb_result = perturb_result.softmax(dim=1)
                     perturb_result = perturb_result[self.mapping_node_id()]
                     perturb_score = perturb_result[target].item()
 
