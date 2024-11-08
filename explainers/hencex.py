@@ -366,9 +366,13 @@ class HENCEXCore(ExplainerCore):
                              for i in range(data.shape[1])]
             feat_p_values_pick = np.array(feat_p_values) < p_threshold
             if np.any(feat_p_values_pick):
-                new_candidates_features[current_node] = \
-                    candidates_features[candidates.index(current_node)][
-                        feat_p_values_pick]
+                # new_candidates_features[current_node] = \
+                #     candidates_features[candidates.index(current_node)][
+                #         feat_p_values_pick]
+                candidates_features_tmp = copy.deepcopy(candidates_features[
+                    candidates.index(current_node)])
+                candidates_features_tmp[candidates_features_tmp] = feat_p_values_pick
+                new_candidates_features[current_node] = candidates_features_tmp
                 selected.append(current_node)
                 processing_list.union(set(self.get_neighbors(current_node, gs,
                                                              range_=candidates))).difference(
