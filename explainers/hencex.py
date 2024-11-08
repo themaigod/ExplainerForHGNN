@@ -248,7 +248,7 @@ class HENCEXCore(ExplainerCore):
         for node in selected_candidates:
             mask_u = [i[node].item() for i in mask_all]
             data = np.zeros((len(mask_u), features.shape[1]))
-            data[mask_u] = perturb_position.cpu().numpy()
+            data[mask_u] = np.stack([i.cpu().numpy() for i in perturb_position])
             data = data[:, candidates_features[selected_candidates.index(node)]]
             data = self.vec2categ(data)
             pd_data.append(data)
@@ -316,7 +316,7 @@ class HENCEXCore(ExplainerCore):
         for idx, node in enumerate(candidates):
             mask_u = [i[node].item() for i in mask_all]
             data = np.zeros((len(mask_u), features.shape[1]))
-            data[mask_u] = perturb_position.cpu().numpy()
+            data[mask_u] = np.stack([i.cpu().numpy() for i in perturb_position])
             feature_categ_tmp = self.vec2categ(data[:, candidates_features[idx]])
             feature_categ[node] = feature_categ_tmp
 
@@ -344,7 +344,7 @@ class HENCEXCore(ExplainerCore):
             for node in selected:
                 mask_u = [i[node].item() for i in mask_all]
                 data = np.zeros((len(mask_u), features.shape[1]))
-                data[mask_u] = perturb_position.cpu().numpy()
+                data[mask_u] = np.stack([i.cpu().numpy() for i in perturb_position])
                 feature_categ_tmp = self.vec2categ(data)
                 feature_categ_tmp_all.append(feature_categ_tmp)
             pd_data = [np.expand_dims(perturb_result, axis=1)]
@@ -353,7 +353,7 @@ class HENCEXCore(ExplainerCore):
 
             mask_u = [i[current_node].item() for i in mask_all]
             data = np.zeros((len(mask_u), features.shape[1]))
-            data[mask_u] = perturb_position.cpu().numpy()
+            data[mask_u] = np.stack([i.cpu().numpy() for i in perturb_position])
             data = data[:, candidates_features[candidates.index(current_node)]]
 
             pd_data = np.concatenate((pd_data, data), axis=1)
@@ -385,7 +385,7 @@ class HENCEXCore(ExplainerCore):
                 for node in selected:
                     mask_u = [i[node].item() for i in mask_all]
                     data = np.zeros((len(mask_u), features.shape[1]))
-                    data[mask_u] = perturb_position.cpu().numpy()
+                    data[mask_u] = np.stack([i.cpu().numpy() for i in perturb_position])
                     feature_categ_tmp = self.vec2categ(data)
                     feature_categ_tmp_all.append(feature_categ_tmp)
 
@@ -454,7 +454,7 @@ class HENCEXCore(ExplainerCore):
             for node in processing_list_tmp:
                 mask_u = [i[node].item() for i in mask_all]
                 data = np.zeros((len(mask_u), features.shape[1]))
-                data[mask_u] = perturb_position.cpu().numpy()
+                data[mask_u] = np.stack([i.cpu().numpy() for i in perturb_position])
                 combined = np.concatenate((perturb_result.reshape(-1, 1), data), axis=1)
                 pd_data = pd.DataFrame(combined, columns=['target'] + [str(i) for i in
                                                                        range(data.shape[
