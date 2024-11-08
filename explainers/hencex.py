@@ -533,6 +533,7 @@ class HENCEXCore(ExplainerCore):
             perturbed_features = torch.randint(0, 2, (
                 num_selected_perturbed, features.shape[1])).to(
                 self.device_string)
+            perturbed_features.to(dtype=features.dtype)
             tmp = features[mask] != perturbed_features
             perturb_position.append(tmp)
             features_perturbed[mask] = perturbed_features
@@ -591,6 +592,7 @@ class HENCEXCore(ExplainerCore):
                 perturbed_features = torch.randint(0, 2, (
                     num_selected_perturbed, features.shape[1])).to(
                     self.device_string)
+                perturbed_features.to(dtype=features.dtype)
                 tmp = features[mask] != perturbed_features
                 # perturb_position.append(tmp)
                 features_perturbed[mask] = perturbed_features
