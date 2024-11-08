@@ -716,7 +716,8 @@ class HENCEXCore(ExplainerCore):
                 dim=0)
             new_indices = new_indices.to(self.device_string)
             new_values = g.values()[mask]
-            new_gs.append(torch.sparse_coo_tensor(new_indices, new_values, g.shape))
+            shape = torch.Size([len(self.used_nodes), len(self.used_nodes)])
+            new_gs.append(torch.sparse_coo_tensor(new_indices, new_values, shape))
 
         self.neighbor_input = {"gs": new_gs, "features": features[self.used_nodes]}
         return self.neighbor_input["gs"], self.neighbor_input["features"]
