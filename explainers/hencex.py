@@ -204,20 +204,18 @@ class HENCEXCore(ExplainerCore):
 
     def node_level_explain(self):
         _ = self.extract_neighbors_input()
-        perturb_result, mask_all, perturb_position = self.get_perturb_result()
+        perturb_result, _, _ = self.get_perturb_result()
         candidates, candidates_features = self.select_candidates(perturb_result,
-                                                                 mask_all,
-                                                                 perturb_position)
+                                                                 )
         selected_candidates, candidates_features = self.select_features(candidates,
                                                                         candidates_features,
                                                                         perturb_result,
                                                                         )
-        candidates_features_dict = {candidates[i]: candidates_features[i] for i in
-                                    range(len(candidates))}
+        # candidates_features_dict = {candidates[i]: candidates_features[i] for i in
+        #                             range(len(candidates))}
         selected_candidates = self.drop_nodes(selected_candidates, candidates_features,
-                                              perturb_result,
-                                              mask_all, perturb_position)
-        feature_exp = self.feature_raw2out(candidates_features_dict,
+                                              perturb_result)
+        feature_exp = self.feature_raw2out(candidates_features,
                                            selected_candidates)
         return self.construct_explanation()
 
@@ -230,9 +228,7 @@ class HENCEXCore(ExplainerCore):
         self.feature_raw = features[feature_mask]
         return self.feature_raw
 
-    def drop_nodes(self, selected_candidates, candidates_features, perturb_result,
-                   mask_all, perturb_position
-                   ):
+    def drop_nodes(self, selected_candidates, candidates_features, perturb_result):
         gs, features = self.extract_neighbors_input()
         pd_data = [np.expand_dims(perturb_result, axis=1)]
 
@@ -249,7 +245,7 @@ class HENCEXCore(ExplainerCore):
             # data = np.zeros((len(mask_u), features.shape[1]))
             # data[mask_u] = np.stack([i.cpu().numpy() for i in perturb_position])
             data = self.features_perturb_all[:, node, :].numpy()
-            data = data[:, candidates_features[selected_candidates.index(node)]]
+            data = data[:, candidates_features[node]]
             data = self.vec2categ(data)
             pd_data.append(data)
 
@@ -436,7 +432,7 @@ class HENCEXCore(ExplainerCore):
 
         return cat
 
-    def select_candidates(self, perturb_result, mask_all, perturb_position):
+    def select_candidates(self, perturb_result):
         candidates = []
         candidates_features = []
 
@@ -722,10 +718,8 @@ class HENCEXCore(ExplainerCore):
         for g in gs:
             indices = g.indices()
             # !TODO: Test it in the future, and then expand it to other algorithms
-            mask = torch.isin(indices[0], torch.tensor(temp_used_nodes_tensor,
-                                                       device=self.device_string)) & \
-                   torch.isin(indices[1], torch.tensor(temp_used_nodes_tensor,
-                                                       device=self.device_string))
+            mask = torch.isin(indices[0], temp_used_nodes_tensor) & \
+                   torch.isin(indices[1], temp_used_nodes_tensor)
             new_indices = torch.stack(
                 [torch.tensor(
                     [self.recovery_dict[node.item()] for node in indices[0][mask]]),
