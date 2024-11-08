@@ -246,9 +246,9 @@ class HENCEXCore(ExplainerCore):
                 can_remove.append(node)
 
         for node in selected_candidates:
-            mask_u = [i[node] for i in mask_all]
+            mask_u = [i[node].item() for i in mask_all]
             data = np.zeros((len(mask_u), features.shape[1]))
-            data[mask_u] = perturb_position
+            data[mask_u] = perturb_position.cpu().numpy()
             data = data[:, candidates_features[selected_candidates.index(node)]]
             data = self.vec2categ(data)
             pd_data.append(data)
@@ -314,9 +314,9 @@ class HENCEXCore(ExplainerCore):
         gs, features = self.extract_neighbors_input()
         feature_categ = {}
         for idx, node in enumerate(candidates):
-            mask_u = [i[node] for i in mask_all]
+            mask_u = [i[node].item() for i in mask_all]
             data = np.zeros((len(mask_u), features.shape[1]))
-            data[mask_u] = perturb_position
+            data[mask_u] = perturb_position.cpu().numpy()
             feature_categ_tmp = self.vec2categ(data[:, candidates_features[idx]])
             feature_categ[node] = feature_categ_tmp
 
@@ -342,18 +342,18 @@ class HENCEXCore(ExplainerCore):
 
             feature_categ_tmp_all = []
             for node in selected:
-                mask_u = [i[node] for i in mask_all]
+                mask_u = [i[node].item() for i in mask_all]
                 data = np.zeros((len(mask_u), features.shape[1]))
-                data[mask_u] = perturb_position
+                data[mask_u] = perturb_position.cpu().numpy()
                 feature_categ_tmp = self.vec2categ(data)
                 feature_categ_tmp_all.append(feature_categ_tmp)
             pd_data = [np.expand_dims(perturb_result, axis=1)]
             pd_data.extend(feature_categ_tmp_all)
             pd_data = np.concatenate(pd_data, axis=1)
 
-            mask_u = [i[current_node] for i in mask_all]
+            mask_u = [i[current_node].item() for i in mask_all]
             data = np.zeros((len(mask_u), features.shape[1]))
-            data[mask_u] = perturb_position
+            data[mask_u] = perturb_position.cpu().numpy()
             data = data[:, candidates_features[candidates.index(current_node)]]
 
             pd_data = np.concatenate((pd_data, data), axis=1)
@@ -383,9 +383,9 @@ class HENCEXCore(ExplainerCore):
                 processing_list = list(processing_list)
                 feature_categ_tmp_all = []
                 for node in selected:
-                    mask_u = [i[node] for i in mask_all]
+                    mask_u = [i[node].item() for i in mask_all]
                     data = np.zeros((len(mask_u), features.shape[1]))
-                    data[mask_u] = perturb_position
+                    data[mask_u] = perturb_position.cpu().numpy()
                     feature_categ_tmp = self.vec2categ(data)
                     feature_categ_tmp_all.append(feature_categ_tmp)
 
@@ -452,9 +452,9 @@ class HENCEXCore(ExplainerCore):
 
             processing_list_tmp = processing_list.copy()
             for node in processing_list_tmp:
-                mask_u = [i[node] for i in mask_all]
+                mask_u = [i[node].item() for i in mask_all]
                 data = np.zeros((len(mask_u), features.shape[1]))
-                data[mask_u] = perturb_position
+                data[mask_u] = perturb_position.cpu().numpy()
                 combined = np.concatenate((perturb_result.reshape(-1, 1), data), axis=1)
                 pd_data = pd.DataFrame(combined, columns=['target'] + [str(i) for i in
                                                                        range(data.shape[
