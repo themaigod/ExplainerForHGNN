@@ -211,8 +211,7 @@ class HENCEXCore(ExplainerCore):
         selected_candidates, candidates_features = self.select_features(candidates,
                                                                         candidates_features,
                                                                         perturb_result,
-                                                                        mask_all,
-                                                                        perturb_position)
+                                                                        )
         candidates_features_dict = {candidates[i]: candidates_features[i] for i in
                                     range(len(candidates))}
         selected_candidates = self.drop_nodes(selected_candidates, candidates_features,
@@ -249,7 +248,7 @@ class HENCEXCore(ExplainerCore):
             # mask_u = [i[node].item() for i in mask_all]
             # data = np.zeros((len(mask_u), features.shape[1]))
             # data[mask_u] = np.stack([i.cpu().numpy() for i in perturb_position])
-            data = self.features_perturb_all[:, node, :]
+            data = self.features_perturb_all[:, node, :].numpy()
             data = data[:, candidates_features[selected_candidates.index(node)]]
             data = self.vec2categ(data)
             pd_data.append(data)
@@ -309,8 +308,7 @@ class HENCEXCore(ExplainerCore):
                                                                     connection='weak')
         return n_components == 1
 
-    def select_features(self, candidates, candidates_features, perturb_result, mask_all,
-                        perturb_position
+    def select_features(self, candidates, candidates_features, perturb_result
                         ):
         gs, features = self.extract_neighbors_input()
         feature_categ = {}
@@ -318,7 +316,7 @@ class HENCEXCore(ExplainerCore):
             # mask_u = [i[node].item() for i in mask_all]
             # data = np.zeros((len(mask_u), features.shape[1]))
             # data[mask_u] = np.stack([i.cpu().numpy() for i in perturb_position])
-            data = self.features_perturb_all[:, node, :]
+            data = self.features_perturb_all[:, node, :].numpy()
             feature_categ_tmp = self.vec2categ(data[:, candidates_features[idx]])
             feature_categ[node] = feature_categ_tmp
 
@@ -347,7 +345,7 @@ class HENCEXCore(ExplainerCore):
                 # mask_u = [i[node].item() for i in mask_all]
                 # data = np.zeros((len(mask_u), features.shape[1]))
                 # data[mask_u] = np.stack([i.cpu().numpy() for i in perturb_position])
-                data = self.features_perturb_all[:, node, :]
+                data = self.features_perturb_all[:, node, :].numpy()
                 feature_categ_tmp = self.vec2categ(data)
                 feature_categ_tmp_all.append(feature_categ_tmp)
             pd_data = [np.expand_dims(perturb_result, axis=1)]
@@ -357,7 +355,7 @@ class HENCEXCore(ExplainerCore):
             # mask_u = [i[current_node].item() for i in mask_all]
             # data = np.zeros((len(mask_u), features.shape[1]))
             # data[mask_u] = np.stack([i.cpu().numpy() for i in perturb_position])
-            data = self.features_perturb_all[:, current_node, :]
+            data = self.features_perturb_all[:, current_node, :].numpy()
             data = data[:, candidates_features[candidates.index(current_node)]]
 
             pd_data = np.concatenate((pd_data, data), axis=1)
@@ -390,7 +388,7 @@ class HENCEXCore(ExplainerCore):
                     # mask_u = [i[node].item() for i in mask_all]
                     # data = np.zeros((len(mask_u), features.shape[1]))
                     # data[mask_u] = np.stack([i.cpu().numpy() for i in perturb_position])
-                    data = self.features_perturb_all[:, node, :]
+                    data = self.features_perturb_all[:, node, :].numpy()
                     feature_categ_tmp = self.vec2categ(data)
                     feature_categ_tmp_all.append(feature_categ_tmp)
 
@@ -460,7 +458,7 @@ class HENCEXCore(ExplainerCore):
                 # mask_u = [i[node].item() for i in mask_all]
                 # data = np.zeros((len(mask_u), features.shape[1]))
                 # data[mask_u] = np.stack([i.cpu().numpy() for i in perturb_position])
-                data = self.features_perturb_all[:, node, :]
+                data = self.features_perturb_all[:, node, :].numpy()
                 combined = np.concatenate((perturb_result.reshape(-1, 1), data), axis=1)
                 pd_data = pd.DataFrame(combined, columns=['target'] + [str(i) for i in
                                                                        range(data.shape[
@@ -559,9 +557,9 @@ class HENCEXCore(ExplainerCore):
 
         self.features_perturb_all = torch.zeros(
             (len(mask_all), features.shape[0], features.shape[1]), dtype=torch.bool
-            ).to(self.device_string)
+            )
         for i, mask in enumerate(mask_all):
-            self.features_perturb_all[i][mask] = perturb_position[i]
+            self.features_perturb_all[i][mask] = perturb_position[i].cpu()
 
         perturb_score_all = np.array(perturb_score_all)
         perturb_range = perturb_score_all.max() - perturb_score_all.min()
