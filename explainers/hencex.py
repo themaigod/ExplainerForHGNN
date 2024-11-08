@@ -235,7 +235,7 @@ class HENCEXCore(ExplainerCore):
         # use connectivities to remove nodes
         can_remove = []
         for node in selected_candidates:
-            if node == self.mapped_node_id():
+            if node == self.mapping_node_id():
                 continue
             if self.check_connectivity(node, gs):
                 can_remove.append(node)
