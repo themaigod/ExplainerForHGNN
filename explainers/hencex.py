@@ -246,9 +246,10 @@ class HENCEXCore(ExplainerCore):
                 can_remove.append(node)
 
         for node in selected_candidates:
-            mask_u = [i[node].item() for i in mask_all]
-            data = np.zeros((len(mask_u), features.shape[1]))
-            data[mask_u] = np.stack([i.cpu().numpy() for i in perturb_position])
+            # mask_u = [i[node].item() for i in mask_all]
+            # data = np.zeros((len(mask_u), features.shape[1]))
+            # data[mask_u] = np.stack([i.cpu().numpy() for i in perturb_position])
+            data = self.features_perturb_all[:, node, :]
             data = data[:, candidates_features[selected_candidates.index(node)]]
             data = self.vec2categ(data)
             pd_data.append(data)
@@ -314,9 +315,10 @@ class HENCEXCore(ExplainerCore):
         gs, features = self.extract_neighbors_input()
         feature_categ = {}
         for idx, node in enumerate(candidates):
-            mask_u = [i[node].item() for i in mask_all]
-            data = np.zeros((len(mask_u), features.shape[1]))
-            data[mask_u] = np.stack([i.cpu().numpy() for i in perturb_position])
+            # mask_u = [i[node].item() for i in mask_all]
+            # data = np.zeros((len(mask_u), features.shape[1]))
+            # data[mask_u] = np.stack([i.cpu().numpy() for i in perturb_position])
+            data = self.features_perturb_all[:, node, :]
             feature_categ_tmp = self.vec2categ(data[:, candidates_features[idx]])
             feature_categ[node] = feature_categ_tmp
 
@@ -342,18 +344,20 @@ class HENCEXCore(ExplainerCore):
 
             feature_categ_tmp_all = []
             for node in selected:
-                mask_u = [i[node].item() for i in mask_all]
-                data = np.zeros((len(mask_u), features.shape[1]))
-                data[mask_u] = np.stack([i.cpu().numpy() for i in perturb_position])
+                # mask_u = [i[node].item() for i in mask_all]
+                # data = np.zeros((len(mask_u), features.shape[1]))
+                # data[mask_u] = np.stack([i.cpu().numpy() for i in perturb_position])
+                data = self.features_perturb_all[:, node, :]
                 feature_categ_tmp = self.vec2categ(data)
                 feature_categ_tmp_all.append(feature_categ_tmp)
             pd_data = [np.expand_dims(perturb_result, axis=1)]
             pd_data.extend(feature_categ_tmp_all)
             pd_data = np.concatenate(pd_data, axis=1)
 
-            mask_u = [i[current_node].item() for i in mask_all]
-            data = np.zeros((len(mask_u), features.shape[1]))
-            data[mask_u] = np.stack([i.cpu().numpy() for i in perturb_position])
+            # mask_u = [i[current_node].item() for i in mask_all]
+            # data = np.zeros((len(mask_u), features.shape[1]))
+            # data[mask_u] = np.stack([i.cpu().numpy() for i in perturb_position])
+            data = self.features_perturb_all[:, current_node, :]
             data = data[:, candidates_features[candidates.index(current_node)]]
 
             pd_data = np.concatenate((pd_data, data), axis=1)
@@ -383,9 +387,10 @@ class HENCEXCore(ExplainerCore):
                 processing_list = list(processing_list)
                 feature_categ_tmp_all = []
                 for node in selected:
-                    mask_u = [i[node].item() for i in mask_all]
-                    data = np.zeros((len(mask_u), features.shape[1]))
-                    data[mask_u] = np.stack([i.cpu().numpy() for i in perturb_position])
+                    # mask_u = [i[node].item() for i in mask_all]
+                    # data = np.zeros((len(mask_u), features.shape[1]))
+                    # data[mask_u] = np.stack([i.cpu().numpy() for i in perturb_position])
+                    data = self.features_perturb_all[:, node, :]
                     feature_categ_tmp = self.vec2categ(data)
                     feature_categ_tmp_all.append(feature_categ_tmp)
 
@@ -452,9 +457,10 @@ class HENCEXCore(ExplainerCore):
 
             processing_list_tmp = processing_list.copy()
             for node in processing_list_tmp:
-                mask_u = [i[node].item() for i in mask_all]
-                data = np.zeros((len(mask_u), features.shape[1]))
-                data[mask_u] = np.stack([i.cpu().numpy() for i in perturb_position])
+                # mask_u = [i[node].item() for i in mask_all]
+                # data = np.zeros((len(mask_u), features.shape[1]))
+                # data[mask_u] = np.stack([i.cpu().numpy() for i in perturb_position])
+                data = self.features_perturb_all[:, node, :]
                 combined = np.concatenate((perturb_result.reshape(-1, 1), data), axis=1)
                 pd_data = pd.DataFrame(combined, columns=['target'] + [str(i) for i in
                                                                        range(data.shape[
@@ -550,6 +556,12 @@ class HENCEXCore(ExplainerCore):
                 perturb_result = perturb_result[self.mapping_node_id()]
                 perturb_score = perturb_result[target].item()
             perturb_score_all.append(perturb_score)
+
+        self.features_perturb_all = torch.zeros(
+            (len(mask_all), features.shape[0], features.shape[1]), dtype=torch.bool
+            ).to(self.device_string)
+        for i, mask in enumerate(mask_all):
+            self.features_perturb_all[i][mask] = perturb_position[i]
 
         perturb_score_all = np.array(perturb_score_all)
         perturb_range = perturb_score_all.max() - perturb_score_all.min()
@@ -719,8 +731,9 @@ class HENCEXCore(ExplainerCore):
             new_indices = torch.stack(
                 [torch.tensor(
                     [self.recovery_dict[node.item()] for node in indices[0][mask]]),
-                 torch.tensor(
-                     [self.recovery_dict[node.item()] for node in indices[1][mask]])],
+                    torch.tensor(
+                        [self.recovery_dict[node.item()] for node in
+                         indices[1][mask]])],
                 dim=0)
             new_indices = new_indices.to(self.device_string)
             new_values = g.values()[mask]
