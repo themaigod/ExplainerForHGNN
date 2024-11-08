@@ -709,8 +709,10 @@ class HENCEXCore(ExplainerCore):
                    torch.isin(indices[1], torch.tensor(temp_used_nodes_tensor,
                                                        device=self.device_string))
             new_indices = torch.stack(
-                [torch.tensor([self.recovery_dict[node] for node in indices[0][mask]]),
-                 torch.tensor([self.recovery_dict[node] for node in indices[1][mask]])],
+                [torch.tensor(
+                    [self.recovery_dict[node.item()] for node in indices[0][mask]]),
+                 torch.tensor(
+                     [self.recovery_dict[node.item()] for node in indices[1][mask]])],
                 dim=0)
             new_values = g.values()[mask]
             new_gs.append(torch.sparse_coo_tensor(new_indices, new_values, g.shape))
