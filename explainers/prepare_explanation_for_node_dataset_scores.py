@@ -38,24 +38,41 @@ def get_edge_mask_hard(explainer, opposite=False):
             explainer.config['edge_mask_threshold_method']))
 
 
-def get_top_k_edge_mask_core(edge_mask, top_k, opposite=False):
+def get_top_k_edge_mask_core(edge_mask, top_k, opposite=False, separate=True):
     # Compute sizes and cumulative sizes of edge masks
     size_edge_mask = [em.numel() for em in edge_mask]
 
-    # Concatenate and sort to get the top_k indices
-    edge_mask_concat = torch.cat(edge_mask)
-    top_k = int(top_k * edge_mask_concat.size(0))
-    _, indices = torch.topk(edge_mask_concat, top_k)
+    if not separate:
+        # Concatenate and sort to get the top_k indices
+        edge_mask_concat = torch.cat(edge_mask)
+        top_k = int(top_k * edge_mask_concat.size(0))
+        _, indices = torch.topk(edge_mask_concat, top_k)
 
-    # Initialize the edge mask hard tensor as a single concatenated tensor
-    edge_mask_hard_concat = torch.zeros_like(
-        edge_mask_concat) if not opposite else torch.ones_like(edge_mask_concat)
+        # Initialize the edge mask hard tensor as a single concatenated tensor
+        edge_mask_hard_concat = torch.zeros_like(
+            edge_mask_concat) if not opposite else torch.ones_like(edge_mask_concat)
 
-    # Set the top_k positions to 1 (or 0 if opposite=True)
-    edge_mask_hard_concat[indices] = 1 if not opposite else 0
+        # Set the top_k positions to 1 (or 0 if opposite=True)
+        edge_mask_hard_concat[indices] = 1 if not opposite else 0
 
-    # Split the hard mask back into the original list of tensors
-    edge_mask_hard = torch.split(edge_mask_hard_concat, size_edge_mask)
+        # Split the hard mask back into the original list of tensors
+        edge_mask_hard = torch.split(edge_mask_hard_concat, size_edge_mask)
+
+        return list(edge_mask_hard)
+
+    edge_mask_hard = []
+    for em in edge_mask:
+        # Sort the edge mask tensor to get the top_k indices
+        top_k = int(top_k * em.size(0))
+        _, indices = torch.topk(em, top_k)
+
+        # Initialize the edge mask hard tensor
+        em_hard = torch.zeros_like(em) if not opposite else torch.ones_like(em)
+
+        # Set the top_k positions to 1 (or 0 if opposite=True)
+        em_hard[indices] = 1 if not opposite else 0
+
+        edge_mask_hard.append(em_hard)
 
     return list(edge_mask_hard)
 
