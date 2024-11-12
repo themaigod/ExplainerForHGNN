@@ -25,10 +25,11 @@ we will use them.
 
 Example results for Explainers on the HAN model with GCN on the ACM dataset:
 
+
 | **Model**                | **Fidelity- (↓)** | **Fidelity+ (↑)** | **Characterization Score (↑)** | **Macro-F1 (↑)** | **Micro-F1 (↑)** |
-|--------------------------|-------------------|-------------------|--------------------------------|------------------|------------------|
-| **GNNExplainerMeta**     | $22.00 \pm 5.45$  | $42.95 \pm 7.53$  | $36.10 \pm 9.07$               | $67.06 \pm 5.87$ | $69.85 \pm 5.00$ |
-| **GNNExplainerOriginal** | $21.80 \pm 5.05$  | $40.10 \pm 4.84$  | $32.84 \pm 5.86$               | $65.61 \pm 4.95$ | $68.75 \pm 4.86$ |
+| ------------------------ | ------------------ | ------------------ | ------------------------------- | ----------------- | ----------------- |
+| **GNNExplainerMeta**     | $22.00 \pm 5.45$   | $42.95 \pm 7.53$   | $36.10 \pm 9.07$                | $67.06 \pm 5.87$  | $69.85 \pm 5.00$  |
+| **GNNExplainerOriginal** | $21.80 \pm 5.05$   | $40.10 \pm 4.84$   | $32.84 \pm 5.86$                | $65.61 \pm 4.95$  | $68.75 \pm 4.86$  |
 
 Normally, we argue that those explainers with "-Meta" which are the modified version for the heterogeneous graph, have
 better performance than the original version. This is because Meta version treats each subgraph separately, while the
@@ -91,7 +92,7 @@ Now Dataset available: ACM, DBLP, IMDB
 
 Now model available: HAN (with GAT), HAN (with GCN)
 
-Now explainer available: GNNExplainer, Grad
+Now explainer available: GNNExplainer, Grad, HENCEX (only one version)
 
 We provide two versions of explainer: one is the original version (directly for heterogeneous), and the other is the
 version that further modify for the heterogeneous.
@@ -221,7 +222,7 @@ PaGE-Link
 }
 ```
 
-CE-based 
+CE-based
 
 ```bibtex
 @article{Khler2024UtilizingDL,
@@ -246,7 +247,8 @@ CF-HGExplainer
 }
 ```
 
-Will be implemented if the authors really provide the code. Currently, the repository is empty.
+Will be implemented if the authors really provide the code. Currently, the author repository is empty.
+
 ```github
 https://github.com/gitdevqiang/CF-HGExplainer
 ```
