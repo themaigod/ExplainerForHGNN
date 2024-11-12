@@ -2,6 +2,7 @@
   "record_metrics": [
     "mask_density"
   ],
+  "extract_neighbors": true,
   "mask_features": true,
   "feature_mask_marginalize": false,
   "apply_mata_mask": true,
