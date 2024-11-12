@@ -286,7 +286,7 @@ class GradExplainerCore(ExplainerCore):
         def handle_fn(model):
             if model is None:
                 model = self.model
-            gs, features = model.standard_input()
+            gs, features = model.extract_neighbors_input()
             if masked_gs is not None:
                 gs = [i.to(self.device_string) for i in masked_gs]
             if feature_mask is not None:
