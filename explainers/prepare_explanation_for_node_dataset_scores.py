@@ -61,9 +61,10 @@ def get_top_k_edge_mask_core(edge_mask, top_k, opposite=False, separate=True):
         return list(edge_mask_hard)
 
     edge_mask_hard = []
+    top_ori = top_k
     for em in edge_mask:
         # Sort the edge mask tensor to get the top_k indices
-        top_k = int(top_k * em.size(0))
+        top_k = int(top_ori * em.size(0))
         _, indices = torch.topk(em, top_k)
 
         # Initialize the edge mask hard tensor
