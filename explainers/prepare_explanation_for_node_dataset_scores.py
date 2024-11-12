@@ -73,7 +73,6 @@ def get_masked_gs_hard(explainer, opposite=False):
     masked_gs_hard = []
     for g, em in zip(gs, edge_mask_hard):
         g = g.coalesce()
-        values = g.values()
         mask = torch.sparse_coo_tensor(g.indices(), em,
                                        g.size())
         masked_g = g * mask
