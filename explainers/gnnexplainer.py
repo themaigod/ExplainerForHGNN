@@ -59,24 +59,34 @@ class GNNExplainerMetaCore(ExplainerCore):
     def init_params_graph_level(self):
         pass
 
+    def mapping_node_id(self):
+        if getattr(self, 'mapped_node_id', None) is not None:
+            return self.mapped_node_id
+        if not self.config.get('extract_neighbors', True):
+            self.mapped_node_id = self.node_id
+        else:
+            self.mapped_node_id = self.recovery_dict[self.node_id]
+        return self.mapped_node_id
+
     def extract_neighbors_input(self):
         """
         Extract the neighbors of the node to be explained
         :return:
         """
-        if not self.config.get('extract_neighbors', False):
+        # the sample number of hencex highly depends on the number of nodes
+        # Therefore, we suggests to set it to True to avoid too many samples
+        if not self.config.get('extract_neighbors', True):
             gs, features = self.model.standard_input()
             self.neighbor_input = {"gs": gs, "features": features}
             return gs, features
 
-        # if self.neighbor_input.get("gs", None) is not None:
-        #     return self.neighbor_input["gs"], self.neighbor_input["features"]
         if getattr(self, 'neighbor_input',
                    None) is not None and self.neighbor_input.get(
             "gs", None) is not None:
             return self.neighbor_input["gs"], self.neighbor_input["features"]
 
-        self.n_hop = self.config.get('n_hop', 3)  # default 3-hop neighbors
+        # we follow the default value in hencex
+        self.n_hop = self.config.get('n_hop', 2)
 
         gs, features = self.model.standard_input()
 
@@ -84,35 +94,46 @@ class GNNExplainerMetaCore(ExplainerCore):
 
         for g in gs:
             indices = g.indices()
-            # mask = indices[0] == self.node_id
 
             # consider memory-efficient
             current_nodes = [self.node_id]
 
             for i in range(self.n_hop):
-                new_current_nodes = []
+                new_current_nodes = set()
                 for node in current_nodes:
-                    mask = indices[0] == node
+                    mask = (indices[0] == node) | (indices[1] == node)
                     used_nodes_set.update(indices[1][mask].tolist())
-                    new_current_nodes.extend(indices[1][mask].tolist())
+                    used_nodes_set.update(indices[0][mask].tolist())
+                    new_current_nodes.update(indices[1][mask].tolist())
+                    new_current_nodes.update(indices[0][mask].tolist())
 
+                new_current_nodes = list(new_current_nodes)
                 current_nodes = new_current_nodes
 
         self.used_nodes = sorted(list(used_nodes_set))
         self.recovery_dict = {node: i for i, node in enumerate(self.used_nodes)}
+        self._quick_transfer = torch.zeros(len(features), dtype=torch.long
+                                           ).to(self.device_string)
+        for i, node in enumerate(self.used_nodes):
+            self._quick_transfer[node] = i
 
         # now reconstruct the graph
+        temp_used_nodes_tensor = torch.tensor(self.used_nodes).to(self.device_string)
         new_gs = []
         for g in gs:
             indices = g.indices()
-            # !TODO: maybe some problems here, not consider n_hop
-            mask = (indices[0] == self.node_id) & (indices[1] == self.node_id)
+            # !TODO: Test it in the future, and then expand it to other algorithms
+            mask = torch.isin(indices[0], temp_used_nodes_tensor) & \
+                   torch.isin(indices[1], temp_used_nodes_tensor)
+            # use self._quick_transfer to speed up
             new_indices = torch.stack(
-                [torch.tensor([self.recovery_dict[node] for node in indices[0][mask]]),
-                 torch.tensor([self.recovery_dict[node] for node in indices[1][mask]])],
+                [self._quick_transfer[indices[0][mask]],
+                 self._quick_transfer[indices[1][mask]]],
                 dim=0)
+            new_indices = new_indices.to(self.device_string)
             new_values = g.values()[mask]
-            new_gs.append(torch.sparse_coo_tensor(new_indices, new_values, g.shape))
+            shape = torch.Size([len(self.used_nodes), len(self.used_nodes)])
+            new_gs.append(torch.sparse_coo_tensor(new_indices, new_values, shape))
 
         self.neighbor_input = {"gs": new_gs, "features": features[self.used_nodes]}
         return self.neighbor_input["gs"], self.neighbor_input["features"]
@@ -424,7 +445,7 @@ class GNNExplainerMetaCore(ExplainerCore):
         handle_fn = self.get_input_handle_fn()
 
         output = self.model.custom_forward(handle_fn)
-        loss = self.get_loss(output, self.node_id)
+        loss = self.get_loss(output, self.mapping_node_id())
         return loss
 
     def build_optimizer(self):
@@ -703,10 +724,84 @@ class GNNExplainerOriginalCore(ExplainerCore):
 
         self.subgraph_masks = subgraph_masks
 
+    def mapping_node_id(self):
+        if getattr(self, 'mapped_node_id', None) is not None:
+            return self.mapped_node_id
+        if not self.config.get('extract_neighbors', True):
+            self.mapped_node_id = self.node_id
+        else:
+            self.mapped_node_id = self.recovery_dict[self.node_id]
+        return self.mapped_node_id
+
     def extract_neighbors_input(self):
+        """
+        Extract the neighbors of the node to be explained
+        :return:
+        """
+        # the sample number of hencex highly depends on the number of nodes
+        # Therefore, we suggests to set it to True to avoid too many samples
+        if not self.config.get('extract_neighbors', True):
+            gs, features = self.model.standard_input()
+            self.neighbor_input = {"gs": gs, "features": features}
+            return gs, features
+
+        if getattr(self, 'neighbor_input',
+                   None) is not None and self.neighbor_input.get(
+            "gs", None) is not None:
+            return self.neighbor_input["gs"], self.neighbor_input["features"]
+
+        # we follow the default value in hencex
+        self.n_hop = self.config.get('n_hop', 2)
+
         gs, features = self.model.standard_input()
-        self.neighbor_input = {"gs": gs, "features": features}
-        return gs, features
+
+        used_nodes_set = set()
+
+        for g in gs:
+            indices = g.indices()
+
+            # consider memory-efficient
+            current_nodes = [self.node_id]
+
+            for i in range(self.n_hop):
+                new_current_nodes = set()
+                for node in current_nodes:
+                    mask = (indices[0] == node) | (indices[1] == node)
+                    used_nodes_set.update(indices[1][mask].tolist())
+                    used_nodes_set.update(indices[0][mask].tolist())
+                    new_current_nodes.update(indices[1][mask].tolist())
+                    new_current_nodes.update(indices[0][mask].tolist())
+
+                new_current_nodes = list(new_current_nodes)
+                current_nodes = new_current_nodes
+
+        self.used_nodes = sorted(list(used_nodes_set))
+        self.recovery_dict = {node: i for i, node in enumerate(self.used_nodes)}
+        self._quick_transfer = torch.zeros(len(features), dtype=torch.long
+                                           ).to(self.device_string)
+        for i, node in enumerate(self.used_nodes):
+            self._quick_transfer[node] = i
+
+        # now reconstruct the graph
+        temp_used_nodes_tensor = torch.tensor(self.used_nodes).to(self.device_string)
+        new_gs = []
+        for g in gs:
+            indices = g.indices()
+            # !TODO: Test it in the future, and then expand it to other algorithms
+            mask = torch.isin(indices[0], temp_used_nodes_tensor) & \
+                   torch.isin(indices[1], temp_used_nodes_tensor)
+            # use self._quick_transfer to speed up
+            new_indices = torch.stack(
+                [self._quick_transfer[indices[0][mask]],
+                 self._quick_transfer[indices[1][mask]]],
+                dim=0)
+            new_indices = new_indices.to(self.device_string)
+            new_values = g.values()[mask]
+            shape = torch.Size([len(self.used_nodes), len(self.used_nodes)])
+            new_gs.append(torch.sparse_coo_tensor(new_indices, new_values, shape))
+
+        self.neighbor_input = {"gs": new_gs, "features": features[self.used_nodes]}
+        return self.neighbor_input["gs"], self.neighbor_input["features"]
 
     def node_level_explain(self):
         self.fit_node_level()
@@ -800,7 +895,7 @@ class GNNExplainerOriginalCore(ExplainerCore):
     def forward_node_level(self):
         handle_fn = self.get_input_handle_fn_node_level()
         output = self.model.custom_forward(handle_fn)
-        loss = self.get_loss(output, self.node_id)
+        loss = self.get_loss(output, self.mapping_node_id())
         return loss
 
     def get_loss(self, output, mask=None):
@@ -865,7 +960,7 @@ class GNNExplainerOriginalCore(ExplainerCore):
     def get_input_handle_fn_node_level(self):
         self.masked = {}
         def handle_fn(model):
-            gs, features = self.model.standard_input()
+            gs, features = self.extract_neighbors_input()
             masked_gs_list = []
             for idx, g in enumerate(gs):
                 sub_edge_mask = self.edge_mask[self.subgraph_masks[idx]]
@@ -947,7 +1042,7 @@ class GNNExplainerOriginalCore(ExplainerCore):
 
     def get_custom_input_handle_fn(self, masked_gs=None, feature_mask=None):
         def handle_fn(model):
-            gs, features = self.model.standard_input()
+            gs, features = self.extract_neighbors_input()
             if masked_gs is not None:
                 gs = [g.to(self.device) for g in masked_gs]
             if feature_mask is not None:

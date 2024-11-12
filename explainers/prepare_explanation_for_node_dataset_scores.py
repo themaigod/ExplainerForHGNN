@@ -2,14 +2,24 @@ import torch
 
 
 def get_edge_mask_hard(explainer, opposite=False):
-    if explainer.config['edge_mask_hard_method'] == 'threshold':
+    if getattr(explainer, 'edge_mask_for_output', None) is None:
+        gs = explainer.extract_neighbors_input()[0]
+        edge_mask = []
+        for g in gs:
+            edge_mask.append(torch.ones(g._nnz(), device=explainer.model.device))
+        if explainer.config['edge_mask_hard_method'] in ['threshold', 'auto_threshold']:
+            raise ValueError('edge_mask_hard_method is threshold or auto_threshold, '
+                             'but edge_mask_for_output is not found')
+    else:
         edge_mask = explainer.edge_mask_for_output
+    if explainer.config['edge_mask_hard_method'] == 'threshold':
+        # edge_mask = explainer.edge_mask_for_output
         threshold = explainer.config['edge_mask_threshold']
         if opposite:
             return [em <= threshold for em in edge_mask]
         return [em > threshold for em in edge_mask]
     elif explainer.config['edge_mask_hard_method'] == 'auto_threshold':
-        edge_mask = explainer.edge_mask_for_output
+        # edge_mask = explainer.edge_mask_for_output
         edge_mask_concat = torch.cat(edge_mask)
         threshold = torch.quantile(edge_mask_concat,
                                    explainer.config['threshold_percentage_edge'])
@@ -18,10 +28,9 @@ def get_edge_mask_hard(explainer, opposite=False):
         return [em > threshold for em in edge_mask]
     elif explainer.config['edge_mask_hard_method'] == 'original':
         if opposite:
-            return [-em for em in explainer.edge_mask_for_output]
-        return explainer.edge_mask_for_output
+            return [torch.ones_like(em) - em for em in edge_mask]
+        return edge_mask
     elif explainer.config['edge_mask_hard_method'] == 'top_k':
-        edge_mask = explainer.edge_mask_for_output
         top_k = explainer.config['top_k_for_edge_mask']
         return get_top_k_edge_mask_core(edge_mask, top_k, opposite)
     else:
@@ -59,6 +68,8 @@ def get_top_k_edge_mask_core(edge_mask, top_k, opposite=False):
 
 def get_masked_gs_hard(explainer, opposite=False):
     if explainer.config['edge_mask_hard_method'] == 'original':
+        if getattr(explainer, 'masked', None) is None:
+            raise ValueError('masked is not found')
         if not opposite:
             return explainer.masked['masked_gs']
         else:
@@ -133,21 +144,36 @@ def fidelity_neg_explanation(node_explanation, explainer):
     """
     if "masked_pred_label_hard" not in node_explanation:
         if "masked_pred_label" not in node_explanation:
-            if "masked_gs_hard" not in node_explanation:
+            flag = True
+            if "masked_gs_hard" not in node_explanation and getattr(explainer,
+                                                                    'edge_mask_for_output',
+                                                                    None) is not None:
                 masked_gs_hard = get_masked_gs_hard(explainer)
                 node_explanation.masked_gs_hard = masked_gs_hard
+                flag = False
+            elif "masked_gs_hard" in node_explanation:
+                flag = False
+            else:
+                node_explanation.masked_gs_hard = None
 
             if "feature_mask_hard" not in node_explanation and getattr(explainer,
                                                                        'feature_mask_for_output',
                                                                        None) is not None:
                 feature_mask_hard = get_feature_mask_hard(explainer)
                 node_explanation.feature_mask_hard = feature_mask_hard
+                flag = False
+            elif "feature_mask_hard" in node_explanation:
+                flag = False
+            else:
+                node_explanation.feature_mask_hard = None
+            if flag:
+                raise ValueError('masked_gs_hard and feature_mask_hard are not found')
 
             masked_pred_label = \
                 explainer.model.custom_forward(explainer.get_custom_input_handle_fn(
                     node_explanation.masked_gs_hard,
                     node_explanation.feature_mask_hard))[
-                    explainer.node_id]
+                    explainer.mapping_node_id()]
             node_explanation.masked_pred_label = masked_pred_label
 
         masked_pred_label_hard = node_explanation.masked_pred_label.argmax()
@@ -197,7 +223,7 @@ def fidelity_pos_explanation(node_explanation, explainer):
                 explainer.model.custom_forward(explainer.get_custom_input_handle_fn(
                     node_explanation.opposite_masked_gs_hard,
                     node_explanation.opposite_feature_mask_hard))[
-                    explainer.node_id]
+                    explainer.mapping_node_id()]
             node_explanation.opposite_masked_pred_label = opposite_masked_pred_label
 
         opposite_masked_pred_label_hard = node_explanation.opposite_masked_pred_label.argmax()
@@ -396,10 +422,12 @@ def fidelity_curve_auc_explanation(node_explanation, explainer):
         length = len(feature_masks_hard) if feature_masks_hard is not None else len(
             masked_gs)
         for i in range(length):
+            g = masked_gs[i] if masked_gs is not None else None
+            feature_mask = feature_masks_hard[i] if feature_masks_hard is not None else None
             masked_pred_label = \
                 explainer.model.custom_forward(explainer.get_custom_input_handle_fn(
-                    masked_gs[i], feature_masks_hard[i]))[
-                    explainer.node_id]
+                    g, feature_mask))[
+                    explainer.mapping_node_id()]
             masked_pred_label_hard = masked_pred_label.argmax()
             masked_pred_labels_hard_threshold.append(masked_pred_label_hard)
 
@@ -423,10 +451,12 @@ def fidelity_curve_auc_explanation(node_explanation, explainer):
         length = len(feature_masks_hard) if feature_masks_hard is not None else len(
             masked_gs)
         for i in range(length):
+            g = masked_gs[i] if masked_gs is not None else None
+            feature_mask = feature_masks_hard[i] if feature_masks_hard is not None else None
             masked_pred_label = \
                 explainer.model.custom_forward(explainer.get_custom_input_handle_fn(
-                    masked_gs[i], feature_masks_hard[i]))[
-                    explainer.node_id]
+                    g, feature_mask))[
+                    explainer.mapping_node_id()]
             masked_pred_label_hard = masked_pred_label.argmax()
             masked_pred_labels_hard_threshold.append(masked_pred_label_hard)
 
@@ -442,19 +472,34 @@ def unfaithfulness_explanation(node_explanation, explainer):
     :param explainer: an Explainer object
     """
     if "masked_pred_label" not in node_explanation:
-        if "masked_gs_hard" not in node_explanation:
+        flag = True
+        if "masked_gs_hard" not in node_explanation and getattr(explainer,
+                                                                'edge_mask_for_output',
+                                                                None) is not None:
             masked_gs_hard = get_masked_gs_hard(explainer)
             node_explanation.masked_gs_hard = masked_gs_hard
+            flag = False
+        elif "masked_gs_hard" in node_explanation:
+            flag = False
+        else:
+            node_explanation.masked_gs_hard = None
         if "feature_mask_hard" not in node_explanation and getattr(explainer,
                                                                    'feature_mask_for_output',
                                                                    None) is not None:
             feature_mask_hard = get_feature_mask_hard(explainer)
             node_explanation.feature_mask_hard = feature_mask_hard
+            flag = False
+        elif "feature_mask_hard" in node_explanation:
+            flag = False
+        else:
+            node_explanation.feature_mask_hard = None
+        if flag:
+            raise ValueError('masked_gs_hard and feature_mask_hard are not found')
         masked_pred_label = \
             explainer.model.custom_forward(explainer.get_custom_input_handle_fn(
                 node_explanation.masked_gs_hard,
                 node_explanation.feature_mask_hard))[
-                explainer.node_id]
+                explainer.mapping_node_id()]
         node_explanation.masked_pred_label = masked_pred_label
 
     if "pred_label" not in node_explanation:
@@ -495,19 +540,34 @@ def graph_exp_faith_feature_explanation(node_explanation, explainer):
     :param explainer: an Explainer object
     """
     if "masked_pred_label" not in node_explanation:
-        if "masked_gs_hard" not in node_explanation:
+        flag = True
+        if "masked_gs_hard" not in node_explanation and getattr(explainer,
+                                                                'edge_mask_for_output',
+                                                                None) is not None:
             masked_gs_hard = get_masked_gs_hard(explainer)
             node_explanation.masked_gs_hard = masked_gs_hard
+            flag = False
+        elif "masked_gs_hard" in node_explanation:
+            flag = False
+        else:
+            node_explanation.masked_gs_hard = None
         if "feature_mask_hard" not in node_explanation and getattr(explainer,
                                                                    'feature_mask_for_output',
                                                                    None) is not None:
             feature_mask_hard = get_feature_mask_hard(explainer)
             node_explanation.feature_mask_hard = feature_mask_hard
+            flag = False
+        elif "feature_mask_hard" in node_explanation:
+            flag = False
+        else:
+            node_explanation.feature_mask_hard = None
+        if flag:
+            raise ValueError('masked_gs_hard and feature_mask_hard are not found')
         masked_pred_label = \
             explainer.model.custom_forward(explainer.get_custom_input_handle_fn(
                 node_explanation.masked_gs_hard,
                 node_explanation.feature_mask_hard))[
-                explainer.node_id]
+                explainer.mapping_node_id()]
         node_explanation.masked_pred_label = masked_pred_label
 
     if "perturbed_feature_pred_label" not in node_explanation:
@@ -520,7 +580,7 @@ def graph_exp_faith_feature_explanation(node_explanation, explainer):
             explainer.model.custom_forward(explainer.get_custom_input_handle_fn(
                 node_explanation.masked_gs_hard,
                 node_explanation.perturbed_feature))[
-                explainer.node_id]
+                explainer.mapping_node_id()]
         node_explanation.perturbed_feature_pred_label = perturbed_feature_pred_label
 
     return node_explanation
@@ -543,19 +603,34 @@ def graph_exp_faith_edge_explanation(node_explanation, explainer):
     :param explainer: an Explainer object
     """
     if "masked_pred_label" not in node_explanation:
-        if "masked_gs_hard" not in node_explanation:
+        flag = True
+        if "masked_gs_hard" not in node_explanation and getattr(explainer,
+                                                                'edge_mask_for_output',
+                                                                None) is not None:
             masked_gs_hard = get_masked_gs_hard(explainer)
             node_explanation.masked_gs_hard = masked_gs_hard
+            flag = False
+        elif "masked_gs_hard" in node_explanation:
+            flag = False
+        else:
+            node_explanation.masked_gs_hard = None
         if "feature_mask_hard" not in node_explanation and getattr(explainer,
                                                                    'feature_mask_for_output',
                                                                    None) is not None:
             feature_mask_hard = get_feature_mask_hard(explainer)
             node_explanation.feature_mask_hard = feature_mask_hard
+            flag = False
+        elif "feature_mask_hard" in node_explanation:
+            flag = False
+        else:
+            node_explanation.feature_mask_hard = None
+        if flag:
+            raise ValueError('masked_gs_hard and feature_mask_hard are not found')
         masked_pred_label = \
             explainer.model.custom_forward(explainer.get_custom_input_handle_fn(
                 node_explanation.masked_gs_hard,
                 node_explanation.feature_mask_hard))[
-                explainer.node_id]
+                explainer.mapping_node_id()]
         node_explanation.masked_pred_label = masked_pred_label
 
     if "perturbed_edge_pred_label" not in node_explanation:
@@ -568,7 +643,7 @@ def graph_exp_faith_edge_explanation(node_explanation, explainer):
             explainer.model.custom_forward(explainer.get_custom_input_handle_fn(
                 node_explanation.masked_gs_hard,
                 node_explanation.feature_mask_hard))[
-                explainer.node_id]
+                explainer.mapping_node_id()]
         node_explanation.perturbed_edge_pred_label = perturbed_edge_pred_label
 
     return node_explanation
@@ -720,19 +795,34 @@ def MacroF1_explanation(node_explanation, explainer):
     :param explainer: an Explainer object
     """
     if "masked_pred_label" not in node_explanation:
-        if "masked_gs_hard" not in node_explanation:
+        flag = True
+        if "masked_gs_hard" not in node_explanation and getattr(explainer,
+                                                                'edge_mask_for_output',
+                                                                None) is not None:
             masked_gs_hard = get_masked_gs_hard(explainer)
             node_explanation.masked_gs_hard = masked_gs_hard
+            flag = False
+        elif "masked_gs_hard" in node_explanation:
+            flag = False
+        else:
+            node_explanation.masked_gs_hard = None
         if "feature_mask_hard" not in node_explanation and getattr(explainer,
                                                                    'feature_mask_for_output',
                                                                    None) is not None:
             feature_mask_hard = get_feature_mask_hard(explainer)
             node_explanation.feature_mask_hard = feature_mask_hard
+            flag = False
+        elif "feature_mask_hard" in node_explanation:
+            flag = False
+        else:
+            node_explanation.feature_mask_hard = None
+        if flag:
+            raise ValueError('masked_gs_hard and feature_mask_hard are not found')
         masked_pred_label = \
             explainer.model.custom_forward(explainer.get_custom_input_handle_fn(
                 node_explanation.masked_gs_hard,
                 node_explanation.feature_mask_hard))[
-                explainer.node_id]
+                self.mapping_node_id()]
         node_explanation.masked_pred_label = masked_pred_label
 
     if "pred_label" not in node_explanation:
@@ -749,19 +839,34 @@ def MicroF1_explanation(node_explanation, explainer):
     :param explainer: an Explainer object
     """
     if "masked_pred_label" not in node_explanation:
-        if "masked_gs_hard" not in node_explanation:
+        flag = True
+        if "masked_gs_hard" not in node_explanation and getattr(explainer,
+                                                                'edge_mask_for_output',
+                                                                None) is not None:
             masked_gs_hard = get_masked_gs_hard(explainer)
             node_explanation.masked_gs_hard = masked_gs_hard
+            flag = False
+        elif "masked_gs_hard" in node_explanation:
+            flag = False
+        else:
+            node_explanation.masked_gs_hard = None
         if "feature_mask_hard" not in node_explanation and getattr(explainer,
                                                                    'feature_mask_for_output',
                                                                    None) is not None:
             feature_mask_hard = get_feature_mask_hard(explainer)
             node_explanation.feature_mask_hard = feature_mask_hard
+            flag = False
+        elif "feature_mask_hard" in node_explanation:
+            flag = False
+        else:
+            node_explanation.feature_mask_hard = None
+        if flag:
+            raise ValueError('masked_gs_hard and feature_mask_hard are not found')
         masked_pred_label = \
             explainer.model.custom_forward(explainer.get_custom_input_handle_fn(
                 node_explanation.masked_gs_hard,
                 node_explanation.feature_mask_hard))[
-                explainer.node_id]
+                explainer.mapping_node_id()]
         node_explanation.masked_pred_label = masked_pred_label
 
     if "pred_label" not in node_explanation:
@@ -778,19 +883,34 @@ def roc_auc_score_explanation(node_explanation, explainer):
     :param explainer: an Explainer object
     """
     if "masked_pred_label" not in node_explanation:
-        if "masked_gs_hard" not in node_explanation:
+        flag = True
+        if "masked_gs_hard" not in node_explanation and getattr(explainer,
+                                                                'edge_mask_for_output',
+                                                                None) is not None:
             masked_gs_hard = get_masked_gs_hard(explainer)
             node_explanation.masked_gs_hard = masked_gs_hard
+            flag = False
+        elif "masked_gs_hard" in node_explanation:
+            flag = False
+        else:
+            node_explanation.masked_gs_hard = None
         if "feature_mask_hard" not in node_explanation and getattr(explainer,
                                                                    'feature_mask_for_output',
                                                                    None) is not None:
             feature_mask_hard = get_feature_mask_hard(explainer)
             node_explanation.feature_mask_hard = feature_mask_hard
+            flag = False
+        elif "feature_mask_hard" in node_explanation:
+            flag = False
+        else:
+            node_explanation.feature_mask_hard = None
+        if flag:
+            raise ValueError('masked_gs_hard and feature_mask_hard are not found')
         masked_pred_label = \
             explainer.model.custom_forward(explainer.get_custom_input_handle_fn(
                 node_explanation.masked_gs_hard,
                 node_explanation.feature_mask_hard))[
-                explainer.node_id]
+                explainer.mapping_node_id()]
         node_explanation.masked_pred_label = masked_pred_label
 
     if "pred_label" not in node_explanation:

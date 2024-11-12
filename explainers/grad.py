@@ -21,8 +21,6 @@ class GradExplainerCore(ExplainerCore):
         if self.model.dataset.single_graph:
             self.node_id = kwargs.get('node_id', None)
 
-        self.init_params()
-
         self.extract_neighbors_input()
 
         if self.model.dataset.single_graph:
@@ -44,10 +42,84 @@ class GradExplainerCore(ExplainerCore):
     def graph_level_explain(self):
         pass
 
+    def mapping_node_id(self):
+        if getattr(self, 'mapped_node_id', None) is not None:
+            return self.mapped_node_id
+        if not self.config.get('extract_neighbors', True):
+            self.mapped_node_id = self.node_id
+        else:
+            self.mapped_node_id = self.recovery_dict[self.node_id]
+        return self.mapped_node_id
+
     def extract_neighbors_input(self):
+        """
+        Extract the neighbors of the node to be explained
+        :return:
+        """
+        # the sample number of hencex highly depends on the number of nodes
+        # Therefore, we suggests to set it to True to avoid too many samples
+        if not self.config.get('extract_neighbors', True):
+            gs, features = self.model.standard_input()
+            self.neighbor_input = {"gs": gs, "features": features}
+            return gs, features
+
+        if getattr(self, 'neighbor_input',
+                   None) is not None and self.neighbor_input.get(
+            "gs", None) is not None:
+            return self.neighbor_input["gs"], self.neighbor_input["features"]
+
+        # we follow the default value in hencex
+        self.n_hop = self.config.get('n_hop', 2)
+
         gs, features = self.model.standard_input()
-        self.neighbor_input = {"gs": gs, "feature": features}
-        return gs, features
+
+        used_nodes_set = set()
+
+        for g in gs:
+            indices = g.indices()
+
+            # consider memory-efficient
+            current_nodes = [self.node_id]
+
+            for i in range(self.n_hop):
+                new_current_nodes = set()
+                for node in current_nodes:
+                    mask = (indices[0] == node) | (indices[1] == node)
+                    used_nodes_set.update(indices[1][mask].tolist())
+                    used_nodes_set.update(indices[0][mask].tolist())
+                    new_current_nodes.update(indices[1][mask].tolist())
+                    new_current_nodes.update(indices[0][mask].tolist())
+
+                new_current_nodes = list(new_current_nodes)
+                current_nodes = new_current_nodes
+
+        self.used_nodes = sorted(list(used_nodes_set))
+        self.recovery_dict = {node: i for i, node in enumerate(self.used_nodes)}
+        self._quick_transfer = torch.zeros(len(features), dtype=torch.long
+                                           ).to(self.device_string)
+        for i, node in enumerate(self.used_nodes):
+            self._quick_transfer[node] = i
+
+        # now reconstruct the graph
+        temp_used_nodes_tensor = torch.tensor(self.used_nodes).to(self.device_string)
+        new_gs = []
+        for g in gs:
+            indices = g.indices()
+            # !TODO: Test it in the future, and then expand it to other algorithms
+            mask = torch.isin(indices[0], temp_used_nodes_tensor) & \
+                   torch.isin(indices[1], temp_used_nodes_tensor)
+            # use self._quick_transfer to speed up
+            new_indices = torch.stack(
+                [self._quick_transfer[indices[0][mask]],
+                 self._quick_transfer[indices[1][mask]]],
+                dim=0)
+            new_indices = new_indices.to(self.device_string)
+            new_values = g.values()[mask]
+            shape = torch.Size([len(self.used_nodes), len(self.used_nodes)])
+            new_gs.append(torch.sparse_coo_tensor(new_indices, new_values, shape))
+
+        self.neighbor_input = {"gs": new_gs, "features": features[self.used_nodes]}
+        return self.neighbor_input["gs"], self.neighbor_input["features"]
 
     def node_level_explain(self):
         self.fit()
@@ -127,7 +199,7 @@ class GradExplainerCore(ExplainerCore):
         if mask is not None:
             class_id = mask
         else:
-            class_id = output.argmax(-1)[self.node_id]
+            class_id = output.argmax(-1)[self.mapping_node_id()]
         loss = self.model.custom_loss(output, class_id)
         return loss
 
@@ -144,7 +216,8 @@ class GradExplainerCore(ExplainerCore):
 
         if self.model.support_multi_features and self.config.get('use_meta', False):
             def handle_fn(model):
-                gs, features = model.standard_input()
+                # gs, features = model.standard_input()
+                gs, features = self.extract_neighbors_input()
                 features_list = []
                 for i in range(len(gs)):
                     features_list.append(features.clone().detach())
@@ -156,7 +229,8 @@ class GradExplainerCore(ExplainerCore):
 
         else:
             def handle_fn(model):
-                gs, features = model.standard_input()
+                # gs, features = model.standard_input()
+                gs, features = self.extract_neighbors_input()
                 features.requires_grad = True
                 self.temp_features = features
                 self.temp_gs = gs

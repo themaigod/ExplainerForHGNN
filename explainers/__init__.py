@@ -24,6 +24,8 @@ from .gnnexplainer import GNNExplainerMeta, GNNExplainerOriginal
 # from .pgexplainer import PGExplainer
 # from .cge import CGEExplainer
 from .explainer import Explainer
+from .explanation import NodeExplanation, NodeExplanationCombination
+from .hencex import HENCEX, HENCEXCore
 import os
 
 
@@ -63,6 +65,8 @@ def load_explainer(explainer_name, model_name, dataset_name, explainer_config=No
         return GradExplainer(config)
     elif explainer_name == "GradExplainerOriginal":
         return GradExplainerOriginal(config)
+    elif explainer_name == "HENCEX":
+        return HENCEX(config)
     # elif explainer_name == "SAExplainer":
     #     return SAExplainer(config)
     # elif explainer_name == "GOAtExplainer":

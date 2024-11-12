@@ -232,7 +232,8 @@ class NodeExplanationCombination(BaseExplanation):
         result = [self.node_explanations[i].__getattr__(item) for i in
                   range(len(self.node_explanations))]
         # check if all the elements in the list are None
-        if all([r is None for r in result]):
+        if all([r is None for r in result]) and item not in self.node_explanations[
+            0]._other_data:
             raise AttributeError(
                 f"Attribute {item} not found in NodeExplanationCombination")
         return result

@@ -23,7 +23,8 @@ def standard_explanation(node_explanation, explainer):
     :param node_explanation: a NodeExplanation object
     :param explainer: an Explainer object
     """
-    if "edge_mask" not in node_explanation:
+    if "edge_mask" not in node_explanation and getattr(explainer, 'edge_mask_for_output',
+                                                         None) is not None:
         edge_mask = explainer.edge_mask_for_output
         node_explanation.edge_mask = edge_mask
 

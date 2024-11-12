@@ -154,14 +154,18 @@ def sparsity(node_explanations):
     edge_mask_hard: hard edge mask of the node
     :return:
     """
-    edge_masks = node_explanations.edge_mask_hard  # current type: list[list[tensor]]
-    sparsity_score = sum([sparsity_core(mask) for mask in edge_masks]) / len(edge_masks)
+    if node_explanations.control_data.get('sparsity_type', 'edge') == 'edge':
+        edge_masks = node_explanations.edge_mask_hard  # current type: list[list[tensor]]
+        sparsity_score = sum([sparsity_core(mask) for mask in edge_masks]) / len(edge_masks)
+    else:
+        feature_masks = node_explanations.feature_mask_hard
+        sparsity_score = sum([sparsity_core(mask) for mask in feature_masks]) / len(feature_masks)
     return sparsity_score
 
 
 def sparsity_core(edge_mask):
     total = sum(edge_mask[i].sum().item() for i in range(len(edge_mask)))
-    return total / sum(edge_mask[i].size(0) for i in range(len(edge_mask)))
+    return total / sum(edge_mask[i].numel() for i in range(len(edge_mask)))
 
 
 def graph_exp_faith_feature(node_explanations):
