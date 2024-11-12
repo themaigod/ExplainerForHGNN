@@ -2,7 +2,7 @@
   "record_metrics": [
     "mask_density"
   ],
-  "extract_neighbors": false,
+  "extract_neighbors": true,
   "n_hop": 3,
   "init_strategy_for_edge": "normal",
   "use_mask_bias": false,
@@ -34,12 +34,16 @@
     "characterization_score",
     "Macro-F1",
     "Micro-F1",
-    "roc_auc_score"
+    "roc_auc_score",
+    "fidelity_neg_model",
+    "fidelity_pos_model"
   ],
   "summary_path": "explainer_summary/HAN_GCN_DBLP_GNNExplainerMeta_summary.json",
-  "edge_mask_hard_method": "auto_threshold",
+  "edge_mask_hard_method": "top_k",
+  "top_k_for_edge_mask": 0.75,
   "threshold_percentage_edge": 0.5,
-  "feature_mask_hard_method": "auto_threshold",
+  "feature_mask_hard_method": "top_k",
+  "top_k_for_feature_mask": 0.75,
   "threshold_percentage_feature": 0.5,
   "threshold_percentage_auc": [
     0.0,

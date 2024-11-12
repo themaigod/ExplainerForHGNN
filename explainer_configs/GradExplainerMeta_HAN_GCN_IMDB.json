@@ -12,10 +12,15 @@
     "characterization_score",
     "Macro-F1",
     "Micro-F1",
-    "roc_auc_score"
+    "roc_auc_score",
+    "fidelity_neg_model",
+    "fidelity_pos_model"
   ],
   "summary_path": "explainer_summary/HAN_GCN_IMDB_GradExplainerMeta_summary.json",
-  "edge_mask_hard_method": "auto_threshold",
+  "edge_mask_hard_method": "top_k",
+  "top_k_for_edge_mask": 0.75,
+  "feature_mask_hard_method": "top_k",
+  "top_k_for_feature_mask": 0.75,
   "threshold_percentage_edge": 0.5,
   "threshold_percentage_auc": [
     0.0,
