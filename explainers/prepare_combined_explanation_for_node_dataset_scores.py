@@ -146,4 +146,6 @@ prepare_combined_explanation_fn_for_node_dataset_scores = {
     'Macro-F1': identity_explanation_combined,
     'Micro-F1': identity_explanation_combined,
     'roc_auc_score': identity_explanation_combined,
+    'fidelity_neg_model': identity_explanation_combined,
+    'fidelity_pos_model': identity_explanation_combined,
 }

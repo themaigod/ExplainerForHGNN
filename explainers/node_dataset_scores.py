@@ -349,6 +349,25 @@ def roc_auc_core(masked, label):
     return roc_auc_score_sklearn(label, masked)
 
 
+def fidelity_pos_model(node_explanations):
+    opposite_masked_pred_label_hard = node_explanations.opposite_masked_pred_label_hard  # current type: list[tensor]
+    pred_labels_hard = node_explanations.pred_label_hard  # current type: list[tensor]
+    score = fidelity_model_core(opposite_masked_pred_label_hard, pred_labels_hard)
+    return 1 - score
+
+
+def fidelity_neg_model(node_explanations):
+    masked_pred_label_hard = node_explanations.masked_pred_label_hard  # current type: list[tensor]
+    pred_labels_hard = node_explanations.pred_label_hard  # current type: list[tensor]
+    score = fidelity_model_core(masked_pred_label_hard, pred_labels_hard)
+    return 1 - score
+
+
+def fidelity_model_core(masked, pred):
+    comparison = [masked[i].eq(pred[i]) for i in range(len(masked))]
+    return sum(comparison) / len(comparison)
+
+
 node_dataset_scores = {
     'fidelity_neg': fidelity_neg,
     'fidelity_pos': fidelity_pos,
@@ -362,5 +381,7 @@ node_dataset_scores = {
     'graph_exp_stability_edge': graph_exp_stability_edge,
     'Macro-F1': MacroF1,
     'Micro-F1': MicroF1,
-    'roc_auc_score': roc_auc_score
+    'roc_auc_score': roc_auc_score,
+    'fidelity_pos_model': fidelity_pos_model,
+    'fidelity_neg_model': fidelity_neg_model,
 }

@@ -822,7 +822,7 @@ def MacroF1_explanation(node_explanation, explainer):
             explainer.model.custom_forward(explainer.get_custom_input_handle_fn(
                 node_explanation.masked_gs_hard,
                 node_explanation.feature_mask_hard))[
-                self.mapping_node_id()]
+                explainer.mapping_node_id()]
         node_explanation.masked_pred_label = masked_pred_label
 
     if "pred_label" not in node_explanation:
@@ -933,5 +933,7 @@ prepare_explanation_fn_for_node_dataset_scores = {
     'graph_exp_stability_edge': graph_exp_stability_edge_explanation,
     'Macro-F1': MacroF1_explanation,
     'Micro-F1': MicroF1_explanation,
-    'roc_auc_score': roc_auc_score_explanation
+    'roc_auc_score': roc_auc_score_explanation,
+    'fidelity_neg_model': fidelity_neg_explanation,
+    'fidelity_pos_model': fidelity_pos_explanation,
 }
