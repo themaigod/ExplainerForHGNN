@@ -12,7 +12,7 @@ def fidelity_neg(node_explanations):
     pred_label_hard: predicted label of the node
     :return:
     """
-    masked_pred_labels_hard = node_explanations.pred_label_hardmasked_pred_label_hard  # current type: list[tensor]
+    masked_pred_labels_hard = node_explanations.masked_pred_label_hard  # current type: list[tensor]
     labels = node_explanations.label  # current type: list[tensor]
     pred_labels_hard = node_explanations.pred_label_hard  # current type: list[tensor]
     score = sum([fidelity_core(masked, label, pred) for masked, label, pred in
