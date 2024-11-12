@@ -365,7 +365,7 @@ def fidelity_neg_model(node_explanations):
 
 def fidelity_model_core(masked, pred):
     comparison = [masked[i].eq(pred[i]) for i in range(len(masked))]
-    return sum(comparison) / len(comparison)
+    return (sum(comparison) / len(comparison)).item()
 
 
 node_dataset_scores = {

@@ -38,34 +38,6 @@ def get_edge_mask_hard(explainer, opposite=False):
             explainer.config['edge_mask_threshold_method']))
 
 
-# def get_top_k_edge_mask_core(edge_mask, top_k, opposite=False):
-#     edge_mask_concat = torch.cat(edge_mask)
-#     top_k = int(top_k * len(edge_mask_concat))
-#     indices = torch.sort(edge_mask_concat, descending=True)[1][:top_k]
-#     # revert the indices to the original indices
-#     indices_ori = []
-#     size_edge_mask = [em.size(0) for em in edge_mask]
-#     size_edge_mask_sum = [sum(size_edge_mask[:i]) for i in
-#                           range(len(size_edge_mask))]
-#     for i in indices:
-#         for j in range(len(size_edge_mask_sum)):
-#             if i >= size_edge_mask_sum[j]:
-#                 continue
-#             indices_ori.append((j, i - size_edge_mask_sum[j]))
-#             break
-#
-#     if not opposite:
-#         edge_mask_hard = [torch.zeros_like(em) for em in edge_mask]
-#         for i, j in indices_ori:
-#             edge_mask_hard[i][j] = 1
-#         return edge_mask_hard
-#     else:
-#         edge_mask_hard = [torch.ones_like(em) for em in edge_mask]
-#         for i, j in indices_ori:
-#             edge_mask_hard[i][j] = 0
-#         return edge_mask_hard
-
-
 def get_top_k_edge_mask_core(edge_mask, top_k, opposite=False):
     # Compute sizes and cumulative sizes of edge masks
     size_edge_mask = [em.numel() for em in edge_mask]
