@@ -38,32 +38,54 @@ def get_edge_mask_hard(explainer, opposite=False):
             explainer.config['edge_mask_threshold_method']))
 
 
-def get_top_k_edge_mask_core(edge_mask, top_k, opposite=False):
-    edge_mask_concat = torch.cat(edge_mask)
-    top_k = int(top_k * len(edge_mask_concat))
-    indices = torch.sort(edge_mask_concat, descending=True)[1][:top_k]
-    # revert the indices to the original indices
-    indices_ori = []
-    size_edge_mask = [em.size(0) for em in edge_mask]
-    size_edge_mask_sum = [sum(size_edge_mask[:i]) for i in
-                          range(len(size_edge_mask))]
-    for i in indices:
-        for j in range(len(size_edge_mask_sum)):
-            if i >= size_edge_mask_sum[j]:
-                continue
-            indices_ori.append((j, i - size_edge_mask_sum[j]))
-            break
+# def get_top_k_edge_mask_core(edge_mask, top_k, opposite=False):
+#     edge_mask_concat = torch.cat(edge_mask)
+#     top_k = int(top_k * len(edge_mask_concat))
+#     indices = torch.sort(edge_mask_concat, descending=True)[1][:top_k]
+#     # revert the indices to the original indices
+#     indices_ori = []
+#     size_edge_mask = [em.size(0) for em in edge_mask]
+#     size_edge_mask_sum = [sum(size_edge_mask[:i]) for i in
+#                           range(len(size_edge_mask))]
+#     for i in indices:
+#         for j in range(len(size_edge_mask_sum)):
+#             if i >= size_edge_mask_sum[j]:
+#                 continue
+#             indices_ori.append((j, i - size_edge_mask_sum[j]))
+#             break
+#
+#     if not opposite:
+#         edge_mask_hard = [torch.zeros_like(em) for em in edge_mask]
+#         for i, j in indices_ori:
+#             edge_mask_hard[i][j] = 1
+#         return edge_mask_hard
+#     else:
+#         edge_mask_hard = [torch.ones_like(em) for em in edge_mask]
+#         for i, j in indices_ori:
+#             edge_mask_hard[i][j] = 0
+#         return edge_mask_hard
 
-    if not opposite:
-        edge_mask_hard = [torch.zeros_like(em) for em in edge_mask]
-        for i, j in indices_ori:
-            edge_mask_hard[i][j] = 1
-        return edge_mask_hard
-    else:
-        edge_mask_hard = [torch.ones_like(em) for em in edge_mask]
-        for i, j in indices_ori:
-            edge_mask_hard[i][j] = 0
-        return edge_mask_hard
+
+def get_top_k_edge_mask_core(edge_mask, top_k, opposite=False):
+    # Compute sizes and cumulative sizes of edge masks
+    size_edge_mask = [em.numel() for em in edge_mask]
+
+    # Concatenate and sort to get the top_k indices
+    edge_mask_concat = torch.cat(edge_mask)
+    top_k = int(top_k * edge_mask_concat.size(0))
+    _, indices = torch.topk(edge_mask_concat, top_k)
+
+    # Initialize the edge mask hard tensor as a single concatenated tensor
+    edge_mask_hard_concat = torch.zeros_like(
+        edge_mask_concat) if not opposite else torch.ones_like(edge_mask_concat)
+
+    # Set the top_k positions to 1 (or 0 if opposite=True)
+    edge_mask_hard_concat[indices] = 1 if not opposite else 0
+
+    # Split the hard mask back into the original list of tensors
+    edge_mask_hard = torch.split(edge_mask_hard_concat, size_edge_mask)
+
+    return list(edge_mask_hard)
 
 
 def get_masked_gs_hard(explainer, opposite=False):
@@ -73,16 +95,17 @@ def get_masked_gs_hard(explainer, opposite=False):
         if not opposite:
             return explainer.masked['masked_gs']
         else:
-            return [-g.coalesce() for g in explainer.masked['opposite_masked_gs']]
+            return [1 - g.coalesce() for g in explainer.masked['opposite_masked_gs']]
     edge_mask_hard = get_edge_mask_hard(explainer, opposite)
     gs = explainer.neighbor_input['gs']
     masked_gs_hard = []
     for g, em in zip(gs, edge_mask_hard):
         g = g.coalesce()
         values = g.values()
-        mask = em
-        masked_g = torch.sparse_coo_tensor(g.indices()[:, mask], values[mask],
-                                           g.size())
+        mask = torch.sparse_coo_tensor(g.indices(), em,
+                                       g.size())
+        masked_g = g * mask
+        masked_g = masked_g.coalesce()
         masked_gs_hard.append(masked_g)
 
     return masked_gs_hard
@@ -423,7 +446,8 @@ def fidelity_curve_auc_explanation(node_explanation, explainer):
             masked_gs)
         for i in range(length):
             g = masked_gs[i] if masked_gs is not None else None
-            feature_mask = feature_masks_hard[i] if feature_masks_hard is not None else None
+            feature_mask = feature_masks_hard[
+                i] if feature_masks_hard is not None else None
             masked_pred_label = \
                 explainer.model.custom_forward(explainer.get_custom_input_handle_fn(
                     g, feature_mask))[
@@ -452,7 +476,8 @@ def fidelity_curve_auc_explanation(node_explanation, explainer):
             masked_gs)
         for i in range(length):
             g = masked_gs[i] if masked_gs is not None else None
-            feature_mask = feature_masks_hard[i] if feature_masks_hard is not None else None
+            feature_mask = feature_masks_hard[
+                i] if feature_masks_hard is not None else None
             masked_pred_label = \
                 explainer.model.custom_forward(explainer.get_custom_input_handle_fn(
                     g, feature_mask))[
