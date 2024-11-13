@@ -13,7 +13,16 @@ __all__ = [
     # "PGExplainer",
     # "CGEExplainer",
     "Explainer",
-    "load_default_config"
+    "load_default_config",
+    "NodeExplanation",
+    "NodeExplanationCombination",
+    "HENCEX",
+    "HENCEXCore",
+    "RandomExplainer",
+    "RandomExplainerCore",
+    "RandomEdgeMaskExplainer",
+    "RandomFeatureMaskExplainer",
+    "RandomNodeMaskExplainer",
 ]
 
 from .grad import GradExplainerMeta, GradExplainer, GradExplainerOriginal
@@ -26,6 +35,8 @@ from .gnnexplainer import GNNExplainerMeta, GNNExplainerOriginal
 from .explainer import Explainer
 from .explanation import NodeExplanation, NodeExplanationCombination
 from .hencex import HENCEX, HENCEXCore
+from .random import RandomExplainer, RandomExplainerCore, RandomEdgeMaskExplainer, \
+    RandomFeatureMaskExplainer, RandomNodeMaskExplainer
 import os
 
 
@@ -67,6 +78,14 @@ def load_explainer(explainer_name, model_name, dataset_name, explainer_config=No
         return GradExplainerOriginal(config)
     elif explainer_name == "HENCEX":
         return HENCEX(config)
+    elif explainer_name == "RandomExplainer":
+        return RandomExplainer(config)
+    elif explainer_name == "RandomEdgeMaskExplainer":
+        return RandomEdgeMaskExplainer(config)
+    elif explainer_name == "RandomFeatureMaskExplainer":
+        return RandomFeatureMaskExplainer(config)
+    elif explainer_name == "RandomNodeMaskExplainer":
+        return RandomNodeMaskExplainer(config)
     # elif explainer_name == "SAExplainer":
     #     return SAExplainer(config)
     # elif explainer_name == "GOAtExplainer":
