@@ -137,7 +137,7 @@ def get_feature_mask_hard(explainer, opposite=False, separate=True):
         return explainer.feature_mask_for_output
     elif explainer.config['feature_mask_hard_method'] == 'top_k':
         feature_mask = explainer.feature_mask_for_output
-        top_k = int(explainer.config['top_k_for_feature_mask'] * len(feature_mask))
+        top_k = explainer.config['top_k_for_feature_mask']
         if isinstance(feature_mask, list):
             if separate:
                 return [get_top_k_feature_mask_core(fm, top_k, opposite) for fm in
@@ -149,6 +149,7 @@ def get_feature_mask_hard(explainer, opposite=False, separate=True):
                                                                 opposite)
                 return list(
                     torch.split(feature_mask_hard, [len(fm) for fm in feature_mask]))
+        top_k = int(top_k * len(feature_mask))
         indices = torch.sort(feature_mask, descending=True)[1][:top_k]
         if opposite:
             feature_mask_hard = torch.ones_like(feature_mask)
