@@ -645,10 +645,12 @@ class GNNExplainerOriginalCore(ExplainerCore):
         self.model = model
         self.model.eval()
 
+        if self.model.dataset.single_graph:
+            self.node_id = kwargs.get('node_id', None)
+
         self.init_params()
 
         if self.model.dataset.single_graph:
-            self.node_id = kwargs.get('node_id', None)
             if self.node_id is None:
                 raise ValueError('node_id is required for node-level explanation')
             return self.node_level_explain()
