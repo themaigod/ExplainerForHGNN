@@ -293,8 +293,13 @@ class GradExplainerCore(ExplainerCore):
             if masked_gs is not None:
                 gs = [i.to(self.device_string) for i in masked_gs]
             if feature_mask is not None:
-                feature_mask_device = feature_mask.to(self.device_string)
-                features = features * feature_mask_device.view(-1, 1)
+                if self.model.support_multi_features and self.config.get('use_meta',
+                                                                         False):
+                    features = [features * i.to(self.device_string).view(-1, 1) for i in
+                                feature_mask]
+                else:
+                    feature_mask_device = feature_mask.to(self.device_string)
+                    features = features * feature_mask_device.view(-1, 1)
             return gs, features
 
         return handle_fn
