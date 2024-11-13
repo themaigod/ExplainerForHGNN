@@ -522,3 +522,14 @@ class HAN_GCN(BaseModel):
                                 semantic_attention=semantic_attention)
             attentions.append(attention)
         torch.save(attentions, path)
+
+    def to(self, *args, **kwargs):
+        super().to(*args, **kwargs)
+        self.device = self.predict.weight.device
+        # move data to device
+        self.gs = [g.to(self.device) for g in self.gs]
+        self.features = self.features.to(self.device)
+        self.train_mask = self.train_mask.to(self.device)
+        self.valid_mask = self.valid_mask.to(self.device)
+        self.test_mask = self.test_mask.to(self.device)
+        self.labels = self.labels.to(self.device)
