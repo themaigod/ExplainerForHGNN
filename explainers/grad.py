@@ -164,8 +164,9 @@ class GradExplainerCore(ExplainerCore):
             features_weight[torch.isnan(features_weight)] = 0
             features_weight = torch.sqrt(torch.sum(features_weight ** 2, dim=1))
 
+        self.node_mask = features_weight
         if self.config.get('use_feature_mask', True):
-            self.node_mask = features_weight
+            self.feature_mask = features_weight
         else:
             self.edge_mask = self.convert_node_mask_to_edge_mask(features_weight,
                                                                  self.temp_gs)
@@ -277,7 +278,9 @@ class GradExplainerCore(ExplainerCore):
 
     @property
     def feature_mask_for_output(self):
-        return None
+        if 'feature_mask' not in self.__dict__:
+            return None
+        return self.feature_mask
 
     def get_custom_input_handle_fn(self, masked_gs=None, feature_mask=None):
         """
