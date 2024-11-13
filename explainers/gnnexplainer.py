@@ -290,7 +290,7 @@ class GNNExplainerMetaCore(ExplainerCore):
         # feature mask entropy loss term ## not sure about this term, other third party packages have this term but the official implementation implement without using
         # laplacian loss term ## not sure about this term, other third party packages do not have this term but the official implementation has
         # finally keep both feature mask entropy and laplacian
-        if mask:
+        if mask is not None:
             normal_loss = self.model.custom_loss(output, mask)
         else:
             normal_loss = self.model.loss(output)
@@ -710,8 +710,8 @@ class GNNExplainerOriginalCore(ExplainerCore):
         total_indices = self.total_graph.coalesce().indices()
         total_indices_flat = total_indices[0] * total_graph.size(1) + total_indices[1]
         total_indices_dict = \
-        torch.arange(total_indices.size(1), device=self.model.device)[
-            torch.argsort(total_indices_flat)]
+            torch.arange(total_indices.size(1), device=self.model.device)[
+                torch.argsort(total_indices_flat)]
 
         # Vectorized subgraph mask creation using advanced indexing
         subgraph_masks = []
@@ -899,11 +899,11 @@ class GNNExplainerOriginalCore(ExplainerCore):
         return loss
 
     def get_loss(self, output, mask=None):
-        normal_loss = self.model.custom_loss(output, mask) if mask else self.model.loss(
-            output)
+        normal_loss = self.model.custom_loss(output, mask) \
+            if mask is not None else self.model.loss(output)
 
-        edge_mask = fn.sigmoid(self.edge_mask) if self.config[
-                                                      'edge_mask_activation'] == 'sigmoid' else fn.relu(
+        edge_mask = fn.sigmoid(self.edge_mask) \
+            if self.config['edge_mask_activation'] == 'sigmoid' else fn.relu(
             self.edge_mask)
         edge_mask_size_loss = torch.sum(edge_mask)
 
@@ -959,18 +959,19 @@ class GNNExplainerOriginalCore(ExplainerCore):
 
     def get_input_handle_fn_node_level(self):
         self.masked = {}
+
         def handle_fn(model):
             gs, features = self.extract_neighbors_input()
             masked_gs_list = []
             for idx, g in enumerate(gs):
                 sub_edge_mask = self.edge_mask[self.subgraph_masks[idx]]
                 sub_edge_mask = fn.sigmoid(sub_edge_mask) if self.config[
-                                                                'edge_mask_activation'] == 'sigmoid' else g * fn.relu(
+                                                                 'edge_mask_activation'] == 'sigmoid' else g * fn.relu(
                     sub_edge_mask)
                 g = g.coalesce()
                 sym_mask_sparse = torch.sparse_coo_tensor(g.indices(),
-                                                            sub_edge_mask,
-                                                            g.shape)
+                                                          sub_edge_mask,
+                                                          g.shape)
                 masked_g = g * sym_mask_sparse
                 masked_gs_list.append(masked_g)
             features = features * fn.sigmoid(self.feature_mask) if self.config[
