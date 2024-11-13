@@ -149,9 +149,21 @@ class RandomExplainerCore(ExplainerCore):
                 edge = edge.coalesce()
                 self.edge_mask.append(torch.rand_like(edge.values()))
         elif self.config.get('mask_type', "edge_mask") == "feature_mask":
-            self.feature_mask = torch.rand_like(self.extract_neighbors_input()[1])
+            if self.config.get('use_meta', False) and self.model.support_multi_features:
+                self.feature_mask = [torch.rand_like(self.extract_neighbors_input()[1])
+                                     for _ in
+                                     range(len(self.extract_neighbors_input()[0]))]
+            else:
+                self.feature_mask = torch.rand_like(self.extract_neighbors_input()[1])
         elif self.config.get('mask_type', "edge_mask") == "node_mask":
-            self.node_mask = torch.rand_like(self.extract_neighbors_input()[1][:, 0])
+            if self.config.get('use_meta', False) and self.model.support_multi_features:
+                self.node_mask = [
+                    torch.rand_like(self.extract_neighbors_input()[1][:, 0])
+                    for _ in
+                    range(len(self.extract_neighbors_input()[0]))]
+            else:
+                self.node_mask = torch.rand_like(
+                    self.extract_neighbors_input()[1][:, 0])
         else:
             raise ValueError('Invalid mask_type: {}'.format(
                 self.config.get('mask_type', "edge_mask")))
@@ -178,9 +190,19 @@ class RandomExplainerCore(ExplainerCore):
                 gs = masked_gs
             if feature_mask is not None:
                 if self.config.get('mask_type', "edge_mask") == "feature_mask":
-                    features = features * feature_mask
+                    if self.config.get('use_meta',
+                                       False) and model.support_multi_features:
+                        features = [features * feature_mask[i] for i in
+                                    range(len(features))]
+                    else:
+                        features = features * feature_mask
                 elif self.config.get('mask_type', "edge_mask") == "node_mask":
-                    features = features * feature_mask.unsqueeze(1)
+                    if self.config.get('use_meta',
+                                       False) and model.support_multi_features:
+                        features = [features * feature_mask[i].unsqueeze(1) for i in
+                                    range(len(features))]
+                    else:
+                        features = features * feature_mask.unsqueeze(1)
             return gs, features
 
         return custom_input_handle_fn

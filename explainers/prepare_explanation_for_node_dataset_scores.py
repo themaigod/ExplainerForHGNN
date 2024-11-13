@@ -113,7 +113,7 @@ def get_masked_gs_hard_core(gs, edge_mask_hard):
     return masked_gs_hard
 
 
-def get_feature_mask_hard(explainer, opposite=False):
+def get_feature_mask_hard(explainer, opposite=False, separate=True):
     if explainer.feature_mask_for_output is None:
         return None
 
@@ -133,11 +133,22 @@ def get_feature_mask_hard(explainer, opposite=False):
     elif explainer.config['feature_mask_hard_method'] == 'original':
         if opposite:
             return torch.ones_like(explainer.feature_mask_for_output) - \
-                   explainer.feature_mask_for_output
+                explainer.feature_mask_for_output
         return explainer.feature_mask_for_output
     elif explainer.config['feature_mask_hard_method'] == 'top_k':
         feature_mask = explainer.feature_mask_for_output
         top_k = int(explainer.config['top_k_for_feature_mask'] * len(feature_mask))
+        if isinstance(feature_mask, list):
+            if separate:
+                return [get_top_k_feature_mask_core(fm, top_k, opposite) for fm in
+                        feature_mask]
+            else:
+                feature_mask_tensor = torch.cat(feature_mask)
+                feature_mask_hard = get_top_k_feature_mask_core(feature_mask_tensor,
+                                                                top_k,
+                                                                opposite)
+                return list(
+                    torch.split(feature_mask_hard, [len(fm) for fm in feature_mask]))
         indices = torch.sort(feature_mask, descending=True)[1][:top_k]
         if opposite:
             feature_mask_hard = torch.ones_like(feature_mask)
