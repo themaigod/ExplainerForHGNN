@@ -224,15 +224,27 @@ def fidelity_pos_explanation(node_explanation, explainer):
     """
     if "opposite_masked_pred_label_hard" not in node_explanation:
         if "opposite_masked_pred_label" not in node_explanation:
-            if "opposite_masked_gs_hard" not in node_explanation:
+            flag = True
+            if "opposite_masked_gs_hard" not in node_explanation and getattr(
+                explainer, 'edge_mask_for_output', None) is not None:
                 opposite_masked_gs_hard = get_masked_gs_hard(explainer, opposite=True)
                 node_explanation.opposite_masked_gs_hard = opposite_masked_gs_hard
+                flag = False
+            elif "opposite_masked_gs_hard" in node_explanation:
+                flag = False
+            else:
+                node_explanation.opposite_masked_gs_hard = None
 
             if "opposite_feature_mask_hard" not in node_explanation and getattr(
                 explainer, 'feature_mask_for_output', None) is not None:
                 opposite_feature_mask_hard = get_feature_mask_hard(explainer,
                                                                    opposite=True)
                 node_explanation.opposite_feature_mask_hard = opposite_feature_mask_hard
+                flag = False
+            elif "opposite_feature_mask_hard" in node_explanation:
+                flag = False
+            else:
+                node_explanation.opposite_feature_mask_hard = None
 
             opposite_masked_pred_label = \
                 explainer.model.custom_forward(explainer.get_custom_input_handle_fn(
