@@ -77,6 +77,8 @@ def getargs_optional(parser):
 def set_seed(seed, ensure_reproducibility=False, times=0):
     if len(seed) > 1:
         seed = seed[times]
+    else:
+        seed = seed[0]
     torch.manual_seed(seed)
     np.random.seed(seed)
     random.seed(seed)
