@@ -131,6 +131,9 @@ def get_feature_mask_hard(explainer, opposite=False):
             return feature_mask <= threshold
         return feature_mask > threshold
     elif explainer.config['feature_mask_hard_method'] == 'original':
+        if opposite:
+            return torch.ones_like(explainer.feature_mask_for_output) - \
+                   explainer.feature_mask_for_output
         return explainer.feature_mask_for_output
     elif explainer.config['feature_mask_hard_method'] == 'top_k':
         feature_mask = explainer.feature_mask_for_output
