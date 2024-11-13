@@ -294,7 +294,7 @@ class GradExplainerCore(ExplainerCore):
                 gs = [i.to(self.device_string) for i in masked_gs]
             if feature_mask is not None:
                 feature_mask_device = feature_mask.to(self.device_string)
-                features = features * feature_mask_device
+                features = features * feature_mask_device.view(-1, 1)
             return gs, features
 
         return handle_fn
