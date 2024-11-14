@@ -209,17 +209,23 @@ class HENCEXCore(ExplainerCore):
 
     def node_level_explain(self):
         _ = self.extract_neighbors_input()
+        print("Start perturbation...")
         perturb_result, _, _ = self.get_perturb_result()
+        print("Start selecting candidates...")
         candidates, candidates_features = self.select_candidates(perturb_result,
                                                                  )
+        print("Start selecting features...")
         selected_candidates, candidates_features = self.select_features(candidates,
                                                                         candidates_features,
                                                                         perturb_result,
                                                                         )
+        print("Start dropping nodes...")
         selected_candidates = self.drop_nodes(selected_candidates, candidates_features,
                                               perturb_result)
+        print("Start final processing features...")
         feature_exp = self.feature_raw2out(candidates_features,
                                            selected_candidates)
+        print("Finish explanation")
         return self.construct_explanation()
 
     def feature_raw2out(self, candidates_features_dict, selected_candidates):
@@ -507,7 +513,11 @@ class HENCEXCore(ExplainerCore):
 
         use_softmax = self.config.get('result_use_softmax', True)
 
+        from tqdm import tqdm
+        pbar = tqdm(total=num_samples, desc="Perturbation", ncols=100)
+
         for i in range(num_samples):
+            pbar.update(1)
             features_perturbed = copy.deepcopy(features)
             # generate a mask that decides which features to be perturbed
             # since torch cannot create it with weights, we use numpy to create it
@@ -633,6 +643,8 @@ class HENCEXCore(ExplainerCore):
                     perturb_position[idx] = tmp
 
                 step += 1
+
+        pbar.close()
 
         return perturb_cap, mask_all, perturb_position
 
