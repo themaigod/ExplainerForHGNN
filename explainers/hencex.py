@@ -490,7 +490,8 @@ class HENCEXCore(ExplainerCore):
         k = self.config.get('k', 15)  # suggest in paper
         num_samples = max(min_num_samples, k * num_RV)
 
-        num_samples = min(num_samples, 10000)  # avoid too many samples
+        max_num_samples = self.config.get('max_num_samples', 100000)
+        num_samples = min(num_samples, max_num_samples)  # avoid too many samples
 
         def handle_fn(model):
             return gs, features
@@ -669,7 +670,6 @@ class HENCEXCore(ExplainerCore):
             "gs", None) is not None:
             return self.neighbor_input["gs"], self.neighbor_input["features"]
 
-        # we follow the default value in hencex
         self.n_hop = self.config.get('n_hop', 1)
 
         gs, features = self.model.standard_input()
@@ -692,6 +692,7 @@ class HENCEXCore(ExplainerCore):
                     new_current_nodes.update(indices[0][mask].tolist())
 
                 new_current_nodes = list(new_current_nodes)
+                previous_nodes = current_nodes
                 current_nodes = new_current_nodes
 
         self.used_nodes = sorted(list(used_nodes_set))
@@ -702,12 +703,12 @@ class HENCEXCore(ExplainerCore):
             self._quick_transfer[node] = i
 
         # now reconstruct the graph
-        temp_used_nodes_tensor = torch.tensor(self.used_nodes).to(self.device_string)
+        temp_used_nodes_tensor = torch.tensor(previous_nodes).to(self.device_string)
         new_gs = []
         for g in gs:
             indices = g.indices()
             # !TODO: Test it in the future, and then expand it to other algorithms
-            mask = torch.isin(indices[0], temp_used_nodes_tensor) & \
+            mask = torch.isin(indices[0], temp_used_nodes_tensor) | \
                    torch.isin(indices[1], temp_used_nodes_tensor)
             # use self._quick_transfer to speed up
             new_indices = torch.stack(
