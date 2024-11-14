@@ -704,7 +704,6 @@ class HENCEXCore(ExplainerCore):
                     new_current_nodes.update(indices[0][mask].tolist())
 
                 new_current_nodes = list(new_current_nodes)
-                previous_nodes = current_nodes
                 current_nodes = new_current_nodes
 
         self.used_nodes = sorted(list(used_nodes_set))
@@ -715,12 +714,12 @@ class HENCEXCore(ExplainerCore):
             self._quick_transfer[node] = i
 
         # now reconstruct the graph
-        temp_used_nodes_tensor = torch.tensor(previous_nodes).to(self.device_string)
+        temp_used_nodes_tensor = torch.tensor(self.used_nodes).to(self.device_string)
         new_gs = []
         for g in gs:
             indices = g.indices()
             # !TODO: Test it in the future, and then expand it to other algorithms
-            mask = torch.isin(indices[0], temp_used_nodes_tensor) | \
+            mask = torch.isin(indices[0], temp_used_nodes_tensor) & \
                    torch.isin(indices[1], temp_used_nodes_tensor)
             # use self._quick_transfer to speed up
             new_indices = torch.stack(
