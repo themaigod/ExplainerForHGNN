@@ -369,7 +369,7 @@ class HENCEXCore(ExplainerCore):
                 candidates_features_tmp[candidates_features_tmp] = feat_p_values_pick
                 new_candidates_features[current_node] = candidates_features_tmp
                 selected.append(current_node)
-                processing_list.union(set(self.get_neighbors(current_node, gs,
+                processing_list = processing_list.union(set(self.get_neighbors(current_node, gs,
                                                              range_=candidates))).difference(
                     selected)
             else:
@@ -461,9 +461,9 @@ class HENCEXCore(ExplainerCore):
                     processed.add(node)
                     processing_list.remove(node)
                     candidates_features.append(feat_pick)
-                    processing_list.union(set(self.get_neighbors(node, gs)))
+                    processing_list = processing_list.union(set(self.get_neighbors(node, gs)))
 
-            processed.union(processing_list_tmp)
+            processed = processed.union(processing_list_tmp)
             processing_list = processing_list.difference(processed)
 
         if len(candidates) == 0:
