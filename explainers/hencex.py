@@ -670,7 +670,7 @@ class HENCEXCore(ExplainerCore):
             return self.neighbor_input["gs"], self.neighbor_input["features"]
 
         # we follow the default value in hencex
-        self.n_hop = self.config.get('n_hop', 2)
+        self.n_hop = self.config.get('n_hop', 1)
 
         gs, features = self.model.standard_input()
 
@@ -743,7 +743,13 @@ class HENCEXCore(ExplainerCore):
         return self.feature_mask
 
     def get_custom_input_handle_fn(self, masked_gs=None, feature_mask=None):
-        pass
+        if masked_gs is None:
+            gs, features = self.extract_neighbors_input()
+        else:
+            gs = masked_gs
+        if feature_mask is None:
+            feature_mask = self.feature_mask
+        return lambda model: (gs, features * feature_mask)
 
 
 class HENCEX(Explainer):
