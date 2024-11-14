@@ -94,10 +94,7 @@ Now model available: HAN (with GAT), HAN (with GCN)
 
 Now explainer available: GNNExplainer, Grad, HENCEX (only one version)
 
-We provide two versions of explainer: one is the original version (directly for heterogeneous), and the other is the
-version that further modify for the heterogeneous.
-
-Officially, you can use `GNNExplainerMeta`, `GNNExplainerOriginal`, `GradExplainerMeta`, `GradExplainerOriginal` to
+Officially, you can use `GNNExplainerMeta`, `GradExplainerMeta`, `HENCEX` to
 run the experiments.
 
 Some explainers (i.e. GOAt) require more general interface in model than the default design. We do not ensure that all
@@ -210,7 +207,7 @@ The applicable version for GNN is:
 
 #### Heterogeneous Graph
 
-PaGE-Link
+PaGE-Link (Only for Link Prediction)
 
 ```bibtex
 @article{Zhang2023PaGELinkPG,
