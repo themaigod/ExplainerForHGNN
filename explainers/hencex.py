@@ -446,7 +446,10 @@ class HENCEXCore(ExplainerCore):
             c += 1
 
             processing_list_tmp = processing_list.copy()
+            from tqdm import tqdm
+            pbar = tqdm(total=len(processing_list_tmp), desc="Selecting candidates", ncols=100)
             for node in processing_list_tmp:
+                pbar.update(1)
                 data = self.features_perturb_all[:, node, :].numpy()
                 combined = np.concatenate((perturb_result.reshape(-1, 1), data), axis=1)
                 pd_data = pd.DataFrame(combined, columns=['target'] + [str(i) for i in
@@ -463,6 +466,7 @@ class HENCEXCore(ExplainerCore):
                     candidates_features.append(feat_pick)
                     processing_list = processing_list.union(set(self.get_neighbors(node, gs)))
 
+            pbar.close()
             processed = processed.union(processing_list_tmp)
             processing_list = processing_list.difference(processed)
 
