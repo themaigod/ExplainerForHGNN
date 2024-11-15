@@ -37,6 +37,7 @@ from .explanation import NodeExplanation, NodeExplanationCombination
 from .hencex import HENCEX, HENCEXCore
 from .random import RandomExplainer, RandomExplainerCore, RandomEdgeMaskExplainer, \
     RandomFeatureMaskExplainer, RandomNodeMaskExplainer
+from .cebased import CEBased, CEBasedCore
 import os
 
 
@@ -86,6 +87,8 @@ def load_explainer(explainer_name, model_name, dataset_name, explainer_config=No
         return RandomFeatureMaskExplainer(config)
     elif explainer_name == "RandomNodeMaskExplainer":
         return RandomNodeMaskExplainer(config)
+    elif explainer_name == "CEBased":
+        return CEBased(config)
     # elif explainer_name == "SAExplainer":
     #     return SAExplainer(config)
     # elif explainer_name == "GOAtExplainer":
