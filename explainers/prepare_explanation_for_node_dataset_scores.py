@@ -28,7 +28,7 @@ def get_edge_mask_hard(explainer, opposite=False):
         return [em > threshold for em in edge_mask]
     elif explainer.config['edge_mask_hard_method'] == 'original':
         if opposite:
-            return [torch.ones_like(em) - em for em in edge_mask]
+            return [1 - em for em in edge_mask]
         return edge_mask
     elif explainer.config['edge_mask_hard_method'] == 'top_k':
         top_k = explainer.config['top_k_for_edge_mask']
@@ -132,8 +132,7 @@ def get_feature_mask_hard(explainer, opposite=False, separate=True):
         return feature_mask > threshold
     elif explainer.config['feature_mask_hard_method'] == 'original':
         if opposite:
-            return torch.ones_like(explainer.feature_mask_for_output) - \
-                explainer.feature_mask_for_output
+            return 1 - explainer.feature_mask_for_output
         return explainer.feature_mask_for_output
     elif explainer.config['feature_mask_hard_method'] == 'top_k':
         feature_mask = explainer.feature_mask_for_output
@@ -257,6 +256,9 @@ def fidelity_pos_explanation(node_explanation, explainer):
                 flag = False
             else:
                 node_explanation.opposite_feature_mask_hard = None
+            if flag:
+                raise ValueError(
+                    'opposite_masked_gs_hard and opposite_feature_mask_hard are not found')
 
             opposite_masked_pred_label = \
                 explainer.model.custom_forward(explainer.get_custom_input_handle_fn(
