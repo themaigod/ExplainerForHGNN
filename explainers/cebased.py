@@ -312,7 +312,7 @@ class CEBased(Explainer):
                 new_ce = self.create_new_ce(ce)
                 if new_ce != ce:
                     new_processing_ce.append(new_ce)
-            new_processing_ce = sorted(new_processing_ce, key=lambda x: self.score(x),
+            new_processing_ce = sorted(tqdm(new_processing_ce), key=lambda x: self.score(x),
                                        reverse=True)
             new_processing_ce = new_processing_ce[:self.beam_width]
             self.processing_ce = new_processing_ce
