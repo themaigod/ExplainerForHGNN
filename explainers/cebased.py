@@ -305,21 +305,31 @@ class CEBased(Explainer):
         from owlapy.class_expression import OWLClass
         self.processing_ce = [OWLClass('#' + str(target_node_type))] * self.beam_width
 
+        if self.config.get('use_cache', True):
+            self.cache = {}
+
     def beam_search(self):
         for i in range(self.beam_depth):
+            print(f"Processing depth {i} / {self.beam_depth}")
             new_processing_ce = copy.deepcopy(self.processing_ce)
             for ce in self.processing_ce:
                 new_ce = self.create_new_ce(ce)
                 if new_ce != ce:
                     new_processing_ce.append(new_ce)
-            new_processing_ce = sorted(tqdm(new_processing_ce), key=lambda x: self.score(x),
-                                       reverse=True)
+            scored_items = [(x, self.score(x)) for x in
+                            tqdm(new_processing_ce, desc="Scoring CEs")]
+            new_processing_ce = sorted(scored_items, key=lambda x: x[1], reverse=True)
             new_processing_ce = new_processing_ce[:self.beam_width]
             self.processing_ce = new_processing_ce
 
     def score(self, ce):
+        if self.config.get('use_cache', True) and ce in self.cache:
+            return self.cache[ce]
         node_selected = self.select_nodes_from_ce(ce)
-        return self.get_score(node_selected)
+        score = self.get_score(node_selected)
+        if self.config.get('use_cache', True):
+            self.cache[ce] = score
+        return score
 
     def get_score(self, node_selected):
         original_pred = self.model.forward()
