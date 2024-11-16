@@ -155,8 +155,8 @@ class CEBasedCore(ExplainerCore):
         explanation.feature_mask = self.feature_mask
         explanation.feature_mask_hard = self.feature_mask
 
-        explanation.opposite_feature_mask = 1 - self.feature_mask
-        explanation.opposite_feature_mask_hard = 1 - self.feature_mask
+        explanation.opposite_feature_mask = 1 - self.feature_mask.float()
+        explanation.opposite_feature_mask_hard = 1 - self.feature_mask.float()
 
         for metric in self.config['eval_metrics']:
             prepare_explanation_fn_for_node_dataset_scores[metric](explanation, self)

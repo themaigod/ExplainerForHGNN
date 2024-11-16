@@ -28,7 +28,7 @@ def get_edge_mask_hard(explainer, opposite=False):
         return [em > threshold for em in edge_mask]
     elif explainer.config['edge_mask_hard_method'] == 'original':
         if opposite:
-            return [1 - em for em in edge_mask]
+            return [1 - em.float() for em in edge_mask]
         return edge_mask
     elif explainer.config['edge_mask_hard_method'] == 'top_k':
         top_k = explainer.config['top_k_for_edge_mask']
@@ -132,8 +132,8 @@ def get_feature_mask_hard(explainer, opposite=False, separate=True):
         return feature_mask > threshold
     elif explainer.config['feature_mask_hard_method'] == 'original':
         if opposite:
-            return 1 - explainer.feature_mask_for_output
-        return explainer.feature_mask_for_output
+            return 1 - explainer.feature_mask_for_output.float()
+        return explainer.feature_mask_for_output.float()
     elif explainer.config['feature_mask_hard_method'] == 'top_k':
         feature_mask = explainer.feature_mask_for_output
         top_k = explainer.config['top_k_for_feature_mask']
