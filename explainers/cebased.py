@@ -325,7 +325,7 @@ class CEBased(Explainer):
         original_pred = self.model.forward()
         original_pred = original_pred.argmax(dim=-1)
         new_gs, new_features = self.generate_new_input(node_selected)
-        new_pred = self.model.custom_forward(lambda model: new_gs, new_features)
+        new_pred = self.model.custom_forward(lambda model: (new_gs, new_features))
         new_pred = new_pred.argmax(dim=-1)
         return self.fidelity_neg_model(original_pred, new_pred)
 
