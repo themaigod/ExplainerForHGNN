@@ -213,7 +213,7 @@ class CEBasedCore(ExplainerCore):
         return self.feature_mask
 
     def get_custom_input_handle_fn(self, masked_gs=None, feature_mask=None):
-        def input_handle_fn():
+        def input_handle_fn(model):
             gs, features = self.extract_neighbors_input()
             if masked_gs is not None:
                 gs = masked_gs
@@ -309,6 +309,7 @@ class CEBased(Explainer):
             self.cache = {}
 
     def beam_search(self):
+        starting_ce = self.processing_ce[0]
         for i in range(self.beam_depth):
             print(f"Processing depth {i} / {self.beam_depth}")
             new_processing_ce = copy.deepcopy(self.processing_ce)
@@ -319,7 +320,16 @@ class CEBased(Explainer):
             scored_items = [(x, self.score(x)) for x in
                             tqdm(new_processing_ce, desc="Scoring CEs")]
             scored_items = sorted(scored_items, key=lambda x: x[1], reverse=True)
-            new_processing_ce = [x[0] for x in scored_items[:self.beam_width]]
+            filtered_items = [x[0] for x in scored_items if
+                              x[1] > 0 and x[0] != starting_ce]
+            if len(filtered_items) > self.beam_width:
+                new_processing_ce = filtered_items[:self.beam_width]
+            else:
+                if len(filtered_items) == 0:
+                    print("Warning: No new CEs are created.")
+                new_processing_ce = filtered_items
+                new_processing_ce = new_processing_ce + [starting_ce] * (
+                        self.beam_width - len(new_processing_ce))
             self.processing_ce = new_processing_ce
 
     def score(self, ce):
