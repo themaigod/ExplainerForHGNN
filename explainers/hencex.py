@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 from scipy import stats
 import scipy
+from tqdm import tqdm
 
 from .explainer import Explainer, ExplainerCore
 from .explanation import NodeExplanation, NodeExplanationCombination
@@ -424,9 +425,9 @@ class HENCEXCore(ExplainerCore):
                         min([g_sq('target', str(i), ["s" + str(j) + " " + str(k)],
                                   pd_data, boolean=False)[1] for k in
                              range(self.features_perturb_all.shape[2])
-                             for j in
-                             range(len(selected))])
-                        for i in range(len(processing_list))]
+                             for j in range(len(selected))])
+                        for i in
+                        tqdm(range(len(processing_list)), total=len(processing_list), )]
 
                 c += 1
 
