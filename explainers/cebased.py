@@ -375,7 +375,7 @@ class CEBased(Explainer):
 
     def iterate_through_graph(self, ce, current_node_type, current_id):
         if isinstance(ce, owlapy.class_expression.OWLClass):
-            if str(current_node_type) == str(dlsr.render(ce)):
+            if current_node_type == int(dlsr.render(ce)):
                 return True
             return False
         elif isinstance(ce, owlapy.class_expression.OWLObjectUnionOf):
@@ -390,7 +390,6 @@ class CEBased(Explainer):
                     op, current_node_type, current_id)
             return result
         elif isinstance(ce, owlapy.class_expression.OWLObjectMinCardinality):
-            # edge_type = str(dlsr.render(ce._property))
             new_node_types = self.retrieve_top_classes(ce._filler)
             list_adjacent_nodes = self.get_adjacent_nodes(
                 current_node_type, current_id, new_node_types)
@@ -423,7 +422,7 @@ class CEBased(Explainer):
 
     def retrieve_top_classes(self, ce):
         if isinstance(ce, owlapy.class_expression.OWLClass):
-            str_class = str(dlsr.render(ce))
+            str_class = int(dlsr.render(ce))
             return [str_class]
         elif isinstance(ce, owlapy.class_expression.OWLObjectIntersectionOf):
             result = []
