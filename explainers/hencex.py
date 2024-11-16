@@ -369,8 +369,9 @@ class HENCEXCore(ExplainerCore):
                 candidates_features_tmp[candidates_features_tmp] = feat_p_values_pick
                 new_candidates_features[current_node] = candidates_features_tmp
                 selected.append(current_node)
-                processing_list = processing_list.union(set(self.get_neighbors(current_node, gs,
-                                                             range_=candidates))).difference(
+                processing_list = processing_list.union(
+                    set(self.get_neighbors(current_node, gs,
+                                           range_=candidates))).difference(
                     selected)
             else:
                 excluded.add(current_node)
@@ -381,7 +382,11 @@ class HENCEXCore(ExplainerCore):
                 feature_categ_tmp_all = []
                 for node in selected:
                     data = self.features_perturb_all[:, node, :].numpy()
-                    feature_categ_tmp = self.vec2categ(data)
+                    # we find it cannot be run in original code
+                    if self.config.get("use_vec2categ", False):
+                        feature_categ_tmp = self.vec2categ(data)
+                    else:
+                        feature_categ_tmp = data
                     feature_categ_tmp_all.append(feature_categ_tmp)
 
                 pd_data = [np.expand_dims(perturb_result, axis=1)]
@@ -397,16 +402,32 @@ class HENCEXCore(ExplainerCore):
                 pd_data = [pd_data]
                 pd_data.extend(feature_categ_tmp_all)
                 pd_data = np.concatenate(pd_data, axis=1)
+                if self.config.get('use_vec2categ', False):
 
-                pd_data = pd.DataFrame(pd_data, columns=['target'] +
-                                                        ["s" + str(i) for i in
-                                                         range(len(selected))] +
-                                                        ["u" + str(i) for i in
-                                                         range(len(processing_list))])
-                p_values = [g_sq('target', "u" + str(i), ["s" + str(j) for j in
-                                                          range(len(selected))],
-                                 pd_data, boolean=False)[1]
-                            for i in range(len(processing_list))]
+                    pd_data = pd.DataFrame(pd_data, columns=['target'] +
+                                                            ["s" + str(i) for i in
+                                                             range(len(selected))] +
+                                                            ["u" + str(i) for i in
+                                                             range(
+                                                                 len(processing_list))])
+                    p_values = [g_sq('target', "u" + str(i), ["s" + str(j) for j in
+                                                              range(len(selected))],
+                                     pd_data, boolean=False)[1]
+                                for i in range(len(processing_list))]
+                else:
+                    pd_data = pd.DataFrame(pd_data, columns=
+                    ['target'] +
+                    ["s" + str(i) + " " + str(j) for i in range(len(selected)) for j in
+                     range(self.features_perturb_all.shape[2])] +
+                    [str(i) for i in range(len(processing_list))])
+                    p_values = [
+                        min([g_sq('target', str(i), ["s" + str(j) + " " + str(k)],
+                                  pd_data, boolean=False)[1] for k in
+                             range(self.features_perturb_all.shape[2])
+                             for j in
+                             range(len(selected))])
+                        for i in range(len(processing_list))]
+
                 c += 1
 
         if len(selected) == 0:
@@ -454,7 +475,8 @@ class HENCEXCore(ExplainerCore):
 
             processing_list_tmp = processing_list.copy()
             from tqdm import tqdm
-            pbar = tqdm(total=len(processing_list_tmp), desc="Selecting candidates", ncols=100)
+            pbar = tqdm(total=len(processing_list_tmp), desc="Selecting candidates",
+                        ncols=100)
             for node in processing_list_tmp:
                 pbar.update(1)
                 data = self.features_perturb_all[:, node, :].numpy()
@@ -471,7 +493,8 @@ class HENCEXCore(ExplainerCore):
                     processed.add(node)
                     processing_list.remove(node)
                     candidates_features.append(feat_pick)
-                    processing_list = processing_list.union(set(self.get_neighbors(node, gs)))
+                    processing_list = processing_list.union(
+                        set(self.get_neighbors(node, gs)))
 
             pbar.close()
             processed = processed.union(processing_list_tmp)
@@ -720,7 +743,7 @@ class HENCEXCore(ExplainerCore):
         self.used_nodes = sorted(list(used_nodes_set))
         self.recovery_dict = {node: i for i, node in enumerate(self.used_nodes)}
         self._quick_transfer = torch.zeros(len(features), dtype=torch.long
-                                             ).to(self.device_string)
+                                           ).to(self.device_string)
         for i, node in enumerate(self.used_nodes):
             self._quick_transfer[node] = i
 
