@@ -216,9 +216,10 @@ class CEBasedCore(ExplainerCore):
         def input_handle_fn(model):
             gs, features = self.extract_neighbors_input()
             if masked_gs is not None:
-                gs = masked_gs
+                gs = [g.to(self.device_string) for g in masked_gs]
             if feature_mask is not None:
-                features = features * feature_mask.unsqueeze(-1).float()
+                feature_mask_device = feature_mask.to(self.device_string)
+                features = features * feature_mask_device.unsqueeze(-1).float()
             return gs, features
 
         return input_handle_fn
@@ -329,7 +330,7 @@ class CEBased(Explainer):
                     print("Warning: No new CEs are created.")
                 new_processing_ce = filtered_items
                 new_processing_ce = new_processing_ce + [starting_ce] * (
-                        self.beam_width - len(new_processing_ce))
+                    self.beam_width - len(new_processing_ce))
             self.processing_ce = new_processing_ce
 
     def score(self, ce):
