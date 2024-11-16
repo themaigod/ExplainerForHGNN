@@ -318,8 +318,8 @@ class CEBased(Explainer):
                     new_processing_ce.append(new_ce)
             scored_items = [(x, self.score(x)) for x in
                             tqdm(new_processing_ce, desc="Scoring CEs")]
-            new_processing_ce = sorted(scored_items, key=lambda x: x[1], reverse=True)
-            new_processing_ce = new_processing_ce[:self.beam_width]
+            scored_items = sorted(scored_items, key=lambda x: x[1], reverse=True)
+            new_processing_ce = [x[0] for x in scored_items[:self.beam_width]]
             self.processing_ce = new_processing_ce
 
     def score(self, ce):
