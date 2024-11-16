@@ -426,6 +426,8 @@ class HENCEXCore(ExplainerCore):
         cat = np.expand_dims(np.sum(base * vec, axis=-1), axis=0).T
         cat = cat - np.min(cat) * np.ones(cat.shape, dtype=np.int8)
 
+        cat = cat / cat.max()
+
         return cat
 
     def select_candidates(self, perturb_result):
