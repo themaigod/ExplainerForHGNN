@@ -426,7 +426,10 @@ class HENCEXCore(ExplainerCore):
         cat = np.expand_dims(np.sum(base * vec, axis=-1), axis=0).T
         cat = cat - np.min(cat) * np.ones(cat.shape, dtype=np.int8)
 
-        cat = cat / cat.max()
+        cat_categorical = list(set(cat.flatten()))
+        cat_original = cat.copy()
+        for i, c in enumerate(cat_categorical):
+            cat[cat_original == c] = i
 
         return cat
 
