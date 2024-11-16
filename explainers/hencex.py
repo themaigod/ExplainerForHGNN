@@ -431,6 +431,8 @@ class HENCEXCore(ExplainerCore):
         for i, c in enumerate(cat_categorical):
             cat[cat_original == c] = i
 
+        cat = cat.astype(np.int64)
+
         return cat
 
     def select_candidates(self, perturb_result):
