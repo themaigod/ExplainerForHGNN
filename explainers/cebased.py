@@ -371,7 +371,7 @@ class CEBased(Explainer):
             if self.iterate_through_graph(ce, self.model.dataset.node_types[node],
                                           node):
                 nodes_selected.add(node)
-        return nodes_selected
+        return list(sorted(list(nodes_selected)))
 
     def iterate_through_graph(self, ce, current_node_type, current_id):
         if isinstance(ce, owlapy.class_expression.OWLClass):
