@@ -326,7 +326,10 @@ class CEBased(Explainer):
         if self.config.get('use_cache', True) and ce in self.cache:
             return self.cache[ce]
         node_selected = self.select_nodes_from_ce(ce)
-        score = self.get_score(node_selected)
+        if len(node_selected) != 0:
+            score = self.get_score(node_selected)
+        else:
+            score = 0
         if self.config.get('use_cache', True):
             self.cache[ce] = score
         return score
@@ -343,7 +346,8 @@ class CEBased(Explainer):
         test_nodes = self.model.dataset.labels[2]
         test_nodes = [node[0] for node in test_nodes]
         original_pred = original_pred[test_nodes]
-        new_idx = [self.mapping[node] for node in test_nodes]
+        new_idx = [self.mapping[node] if node in self.mapping else -1 for node in
+                   test_nodes]
         new_pred = new_pred[new_idx]
         return (original_pred == new_pred).sum().item() / len(test_nodes)
 
