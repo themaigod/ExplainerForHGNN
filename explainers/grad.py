@@ -199,11 +199,11 @@ class GradExplainerCore(ExplainerCore):
         pass
 
     def get_loss_node_level(self, output, mask=None):
-        output = output[self.mapping_node_id()]
         if mask is not None:
             class_id = mask
         else:
             class_id = output.argmax(-1)[self.mapping_node_id()]
+        output = output[self.mapping_node_id()]
         loss = self.model.loss_fn(output, class_id)
         return loss
 
