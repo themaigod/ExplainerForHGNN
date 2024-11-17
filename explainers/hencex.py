@@ -384,7 +384,7 @@ class HENCEXCore(ExplainerCore):
                 for node in selected:
                     data = self.features_perturb_all[:, node, :].numpy()
                     # we find it cannot be run in original code
-                    if self.config.get("use_vec2categ", False):
+                    if self.config.get("use_vec2categ", True):
                         feature_categ_tmp = self.vec2categ(data)
                     else:
                         feature_categ_tmp = data
@@ -403,7 +403,7 @@ class HENCEXCore(ExplainerCore):
                 pd_data = [pd_data]
                 pd_data.extend(feature_categ_tmp_all)
                 pd_data = np.concatenate(pd_data, axis=1)
-                if self.config.get('use_vec2categ', False):
+                if self.config.get('use_vec2categ', True):
 
                     pd_data = pd.DataFrame(pd_data, columns=['target'] +
                                                             ["s" + str(i) for i in
