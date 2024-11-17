@@ -204,7 +204,7 @@ class GradExplainerCore(ExplainerCore):
             class_id = mask
         else:
             class_id = output.argmax(-1)[self.mapping_node_id()]
-        loss = self.model.custom_loss(output, class_id)
+        loss = self.model.loss_fn(output, class_id)
         return loss
 
     def get_input_handle_fn(self):

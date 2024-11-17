@@ -548,6 +548,10 @@ class HAN(BaseModel):
     def custom_loss(self, outputs, mask):
         return F.cross_entropy(outputs[mask], self.labels[mask])
 
+    @staticmethod
+    def loss_fn(outputs, pred):
+        return F.cross_entropy(outputs, pred)
+
     def custom_forward(self, handle_fn):
         """
         Custom forward function to allow for custom handling of the input of the model.
