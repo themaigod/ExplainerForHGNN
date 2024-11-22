@@ -22,6 +22,7 @@ import torch
 def power_divergence(X, Y, Z, data, boolean=True, lambda_="cressie-read", **kwargs):
     """
     From pgmpy package, we do not want to add the dependency, so we copy the code here.
+    Thanks for the authors of pgmpy.
     Computes the Cressie-Read power divergence statistic [1]. The null hypothesis
     for the test is X is independent of Y given Z. A lot of the frequency comparision
     based statistics (eg. chi-square, G-test etc) belong to power divergence family,

@@ -226,6 +226,13 @@ class CEBasedCore(ExplainerCore):
 
 
 class CEBased(Explainer):
+    """
+    CE-based explanation method
+    In some functions, we almost directly use the code from authors.
+    Paper: https://arxiv.org/abs/2405.12654
+    We have cited the paper. See CE-based in the README.md.
+    Although we think owlapy dependency can be removed, it takes time. So we keep it.
+    """
     def __init__(self, config):
         super().__init__(config)
 
