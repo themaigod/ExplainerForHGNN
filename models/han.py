@@ -139,6 +139,8 @@ class GATConv(nn.Module):
         self.in_feats = in_feats
         self.allow_zero_in_degree = allow_zero_in_degree
 
+        self.is_homo_conv = True
+
         # Handling separate transformations for bipartite graphs
         if isinstance(in_feats, tuple):
             self.fc_src = nn.Linear(in_feats[0], out_feats * num_heads, bias=False)
@@ -365,6 +367,8 @@ class HANLayer(nn.Module):
 
     def __init__(self, num_meta_paths, in_size, out_size, layer_num_heads, dropout):
         super(HANLayer, self).__init__()
+
+        self.is_hetero_conv = True
 
         # One GAT layer for each meta path based adjacency matrix
         self.gat_layers = nn.ModuleList()

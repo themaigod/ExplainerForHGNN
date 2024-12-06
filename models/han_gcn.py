@@ -18,6 +18,8 @@ class HANGCNConv(nn.Module):
             raise ValueError(
                 'Invalid norm value. Must be either "none", "both" or "right".')
 
+        self.is_homo_conv = True
+
         self._in_feats = in_feats
         self._out_feats = out_feats
         self._norm = norm
@@ -183,6 +185,8 @@ class HANLayer(nn.Module):
 
     def __init__(self, num_meta_paths, in_size, out_size, layer_num_heads, dropout):
         super(HANLayer, self).__init__()
+
+        self.is_hetero_conv = True
 
         # One GAT layer for each meta path based adjacency matrix
         self.gat_layers = nn.ModuleList()
