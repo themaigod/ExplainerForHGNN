@@ -67,7 +67,7 @@ def characterization_score(node_explanations):
     if (pos_weight + neg_weight) != 1:
         raise ValueError('pos_weight + neg_weight should be 1')
     score = (pos_weight + neg_weight) / (
-        pos_weight / fidelity_pos_score + neg_weight / (1 - fidelity_neg_score))
+        pos_weight / (fidelity_pos_score + 1e-8) + neg_weight / (1 - fidelity_neg_score + 1e-8))
     return score
 
 
