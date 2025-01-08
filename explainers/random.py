@@ -103,7 +103,6 @@ class RandomExplainerCore(ExplainerCore):
         new_gs = []
         for g in gs:
             indices = g.indices()
-            # !TODO: Test it in the future, and then expand it to other algorithms
             mask = torch.isin(indices[0], temp_used_nodes_tensor) & \
                    torch.isin(indices[1], temp_used_nodes_tensor)
             # use self._quick_transfer to speed up
