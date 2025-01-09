@@ -188,6 +188,7 @@ class RandomExplainerCore(ExplainerCore):
             gs, features = self.extract_neighbors_input()
             if masked_gs is not None:
                 gs = masked_gs
+                gs = [g.to(self.device_string) for g in gs]
             if feature_mask is not None:
                 if self.config.get('mask_type', "edge_mask") == "feature_mask":
                     if self.config.get('use_meta',
