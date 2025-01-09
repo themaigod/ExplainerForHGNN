@@ -144,6 +144,7 @@ class RandomExplainerCore(ExplainerCore):
 
     def fit_node_level(self):
         if self.config.get('mask_type', "edge_mask") == "edge_mask":
+            self.edge_mask = []
             for edge in self.extract_neighbors_input()[0]:
                 edge = edge.coalesce()
                 self.edge_mask.append(torch.rand_like(edge.values()))
