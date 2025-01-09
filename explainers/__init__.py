@@ -28,6 +28,7 @@ __all__ = [
     "RandomEdgeMaskExplainer",
     "RandomFeatureMaskExplainer",
     "RandomNodeMaskExplainer",
+    "RandomEdgeAndFeatureMaskExplainer",
 ]
 
 from .grad import GradExplainerMeta, GradExplainer, GradExplainerOriginal, \
@@ -43,7 +44,7 @@ from .explainer import Explainer, ExplainerCore
 from .explanation import NodeExplanation, NodeExplanationCombination
 from .hencex import HENCEX, HENCEXCore
 from .random import RandomExplainer, RandomExplainerCore, RandomEdgeMaskExplainer, \
-    RandomFeatureMaskExplainer, RandomNodeMaskExplainer
+    RandomFeatureMaskExplainer, RandomNodeMaskExplainer, RandomEdgeAndFeatureMaskExplainer
 from .cebased import CEBased, CEBasedCore
 from .gradcam import GradCAM, GradCAMCore, GradCAMMeta, GradCAMOriginal
 import os
@@ -95,6 +96,8 @@ def load_explainer(explainer_name, model_name, dataset_name, explainer_config=No
         return RandomFeatureMaskExplainer(config)
     elif explainer_name == "RandomNodeMaskExplainer":
         return RandomNodeMaskExplainer(config)
+    elif explainer_name == "RandomEdgeAndFeatureMaskExplainer":
+        return RandomEdgeAndFeatureMaskExplainer(config)
     elif explainer_name == "CEBased":
         return CEBased(config)
     elif explainer_name == "GradCAM":
