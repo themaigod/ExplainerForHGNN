@@ -192,17 +192,23 @@ class RandomExplainerCore(ExplainerCore):
                 if self.config.get('mask_type', "edge_mask") == "feature_mask":
                     if self.config.get('use_meta',
                                        False) and model.support_multi_features:
-                        features = [features * feature_mask[i] for i in
+                        device = self.device_string
+                        feature_mask_device = [mask.to(device) for mask in feature_mask]
+                        features = [features * feature_mask_device[i] for i in
                                     range(len(features))]
                     else:
-                        features = features * feature_mask
+                        feature_mask_device = feature_mask.to(self.device_string)
+                        features = features * feature_mask_device
                 elif self.config.get('mask_type', "edge_mask") == "node_mask":
                     if self.config.get('use_meta',
                                        False) and model.support_multi_features:
-                        features = [features * feature_mask[i].unsqueeze(1) for i in
+                        device = self.device_string
+                        feature_mask_device = [mask.to(device) for mask in feature_mask]
+                        features = [features * feature_mask_device[i].unsqueeze(1) for i in
                                     range(len(features))]
                     else:
-                        features = features * feature_mask.unsqueeze(1)
+                        feature_mask_device = feature_mask.to(self.device_string)
+                        features = features * feature_mask_device.unsqueeze(1)
             return gs, features
 
         return custom_input_handle_fn
