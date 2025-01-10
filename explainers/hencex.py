@@ -795,6 +795,7 @@ class HENCEXCore(ExplainerCore):
             gs, features = self.extract_neighbors_input()
         else:
             gs = masked_gs
+            features = self.extract_neighbors_input()[1]
         if feature_mask is None:
             feature_mask = self.feature_mask
         return lambda model: (gs, features * feature_mask)

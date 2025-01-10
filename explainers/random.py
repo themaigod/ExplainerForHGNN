@@ -179,6 +179,21 @@ class RandomExplainerCore(ExplainerCore):
                     edge = edge.coalesce()
                     self.edge_mask.append(torch.rand_like(edge.values()))
                 self.feature_mask = torch.rand_like(self.extract_neighbors_input()[1])
+        elif self.config.get('mask_type', "edge_mask") == "edge_node_mask":
+            if self.config.get('use_meta', False) and self.model.support_multi_features:
+                self.edge_mask = []
+                self.node_mask = []
+                for edge in self.extract_neighbors_input()[0]:
+                    edge = edge.coalesce()
+                    self.edge_mask.append(torch.rand_like(edge.values()))
+                    self.node_mask.append(
+                        torch.rand_like(self.extract_neighbors_input()[1][:, 0]))
+            else:
+                self.edge_mask = []
+                for edge in self.extract_neighbors_input()[0]:
+                    edge = edge.coalesce()
+                    self.edge_mask.append(torch.rand_like(edge.values()))
+                self.node_mask = torch.rand_like(self.extract_neighbors_input()[1][:, 0])
         else:
             raise ValueError('Invalid mask_type: {}'.format(
                 self.config.get('mask_type', "edge_mask")))
@@ -353,3 +368,9 @@ class RandomEdgeAndFeatureMaskExplainer(RandomExplainer):
     def __init__(self, config):
         super().__init__(config)
         config['mask_type'] = 'edge_feature_mask'
+
+
+class RandomEdgeAndNodeMaskExplainer(RandomExplainer):
+    def __init__(self, config):
+        super().__init__(config)
+        config['mask_type'] = 'edge_node_mask'
