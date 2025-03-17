@@ -113,27 +113,109 @@ def get_masked_gs_hard_core(gs, edge_mask_hard):
     return masked_gs_hard
 
 
+def full_feature_mask_hard(feature_mask, explainer, opposite=False, separate=True):
+    if explainer.config['feature_mask_hard_method'] == 'threshold':
+        threshold = explainer.config['feature_mask_threshold']
+        if isinstance(feature_mask, list):
+            if opposite:
+                return [fm <= threshold for fm in feature_mask]
+            return [fm > threshold for fm in feature_mask]
+        else:
+            if opposite:
+                return feature_mask <= threshold
+            return feature_mask > threshold
+    elif explainer.config['feature_mask_hard_method'] == 'auto_threshold':
+        if isinstance(feature_mask, list):
+            if separate:
+                result = []
+                for fm in feature_mask:
+                    threshold = torch.quantile(fm, explainer.config['threshold_percentage_feature'])
+                    if opposite:
+                        result.append(fm <= threshold)
+                    else:
+                        result.append(fm > threshold)
+                return result
+            else:
+                feature_mask_tensor = torch.cat(feature_mask)
+                threshold = torch.quantile(feature_mask_tensor,
+                                           explainer.config['threshold_percentage_feature'])
+                if opposite:
+                    return [fm <= threshold for fm in feature_mask]
+                return [fm > threshold for fm in feature_mask]
+        else:
+            threshold = torch.quantile(feature_mask,
+                                       explainer.config['threshold_percentage_feature'])
+            if opposite:
+                return feature_mask <= threshold
+            return feature_mask > threshold
+    elif explainer.config['feature_mask_hard_method'] == 'original':
+        if isinstance(feature_mask, list):
+            if opposite:
+                return [1 - fm.float() for fm in feature_mask]
+            return [fm.float() for fm in feature_mask]
+        else:
+            if opposite:
+                return 1 - feature_mask.float()
+            return feature_mask.float()
+
+    elif explainer.config['feature_mask_hard_method'] == 'top_k':
+        top_k = explainer.config['top_k_for_feature_mask']
+        if isinstance(feature_mask, list):
+            # !TODO: Implement this
+            pass
+
+
+
 def get_feature_mask_hard(explainer, opposite=False, separate=True):
     if explainer.feature_mask_for_output is None:
         return None
 
+    feature_mask = explainer.feature_mask_for_output
+    if len(feature_mask.shape) == 2:
+        return full_feature_mask_hard(feature_mask, explainer, opposite, separate)
+
     if explainer.config['feature_mask_hard_method'] == 'threshold':
         feature_mask = explainer.feature_mask_for_output
         threshold = explainer.config['feature_mask_threshold']
-        if opposite:
-            return [fm <= threshold for fm in feature_mask]
-        return feature_mask > threshold
-    elif explainer.config['feature_mask_hard_method'] == 'auto_threshold':
-        feature_mask = explainer.feature_mask_for_output
-        threshold = torch.quantile(feature_mask,
-                                   explainer.config['threshold_percentage_feature'])
+        if isinstance(feature_mask, list):
+            if opposite:
+                return [fm <= threshold for fm in feature_mask]
+            return [fm > threshold for fm in feature_mask]
         if opposite:
             return feature_mask <= threshold
         return feature_mask > threshold
+    elif explainer.config['feature_mask_hard_method'] == 'auto_threshold':
+        feature_mask = explainer.feature_mask_for_output
+        if isinstance(feature_mask, list):
+            if separate:
+                result = []
+                for fm in feature_mask:
+                    threshold = torch.quantile(fm, explainer.config['threshold_percentage_feature'])
+                    if opposite:
+                        result.append(fm <= threshold)
+                    else:
+                        result.append(fm > threshold)
+                return result
+            else:
+                feature_mask_tensor = torch.cat(feature_mask)
+                threshold = torch.quantile(feature_mask_tensor,
+                                             explainer.config['threshold_percentage_feature'])
+                if opposite:
+                    return [
+                        fm <= threshold for fm in feature_mask
+                    ]
+                return [
+                    fm > threshold for fm in feature_mask
+                ]
     elif explainer.config['feature_mask_hard_method'] == 'original':
-        if opposite:
-            return 1 - explainer.feature_mask_for_output.float()
-        return explainer.feature_mask_for_output.float()
+        if isinstance(feature_mask, list):
+            if opposite:
+                return [1 - fm.float() for fm in feature_mask]
+            return [fm.float() for fm in feature_mask]
+        else:
+            if opposite:
+                return 1 - explainer.feature_mask_for_output.float()
+            return explainer.feature_mask_for_output.float()
     elif explainer.config['feature_mask_hard_method'] == 'top_k':
         feature_mask = explainer.feature_mask_for_output
         top_k = explainer.config['top_k_for_feature_mask']
