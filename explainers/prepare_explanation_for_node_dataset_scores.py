@@ -161,8 +161,30 @@ def full_feature_mask_hard(feature_mask, explainer, opposite=False, separate=Tru
     elif explainer.config['feature_mask_hard_method'] == 'top_k':
         top_k = explainer.config['top_k_for_feature_mask']
         if isinstance(feature_mask, list):
-            # !TODO: Implement this
-            pass
+            if separate:
+                return [get_top_k_feature_mask_core(fm, top_k, opposite) for fm in
+                        feature_mask]
+            else:
+                feature_mask_tensor = torch.cat(feature_mask)
+                feature_mask_hard = get_top_k_feature_mask_core(feature_mask_tensor,
+                                                                top_k,
+                                                                opposite)
+                return list(
+                    torch.split(feature_mask_hard, [len(fm) for fm in feature_mask]))
+        top_k = int(top_k * torch.numel(feature_mask))
+        indices = torch.topk(feature_mask, top_k).indices
+        if opposite:
+            feature_mask_hard = torch.ones_like(feature_mask)
+            feature_mask_hard[indices] = 0
+        else:
+            feature_mask_hard = torch.zeros_like(feature_mask)
+            feature_mask_hard[indices] = 1
+        return feature_mask_hard
+
+    else:
+        raise ValueError('Invalid feature_mask_threshold_method: {}'.format(
+            explainer.config['feature_mask_threshold_method']))
+
 
 
 
